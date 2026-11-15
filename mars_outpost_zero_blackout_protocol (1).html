@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>MARS: OUTPOST ZERO — Blackout Protocol</title>
+<style>
+:root{
+  --bg:#05080f;
+  --panel:#0d1624cc;
+  --line:#354c63;
+  --ink:#edf5ff;
+  --muted:#95acc2;
+  --cyan:#5ce1f6;
+  --green:#5ef29b;
+  --amber:#ffbe55;
+  --red:#ff5263;
+  --violet:#b6a0ff;
+  --pan-x:0px;
+  --pan-y:0px;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  padding:0;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:#03060c;
+  color:var(--ink);
+  font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;
+  user-select:none;
+}
+button{font:inherit;cursor:pointer;color:inherit}
+
+/* =========================================================
+   FNAF-STYLE FIRST-PERSON COMMAND ROOM & PARALLAX STAGE
+   ========================================================= */
+.fnaf-stage{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:#04070e;
+  perspective:1100px;
+}
+
+.room-world{
+  position:absolute;
+  inset:-36px -56px;
+  transform:translate3d(var(--pan-x),var(--pan-y),0);
+  transition:transform .12s cubic-bezier(.2,.8,.3,1);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  background:
+    radial-gradient(ellipse at 50% 24%,#1a2b3d 0%,#0b1320 55%,#04070d 100%);
+}
+
+.bunker-wall{
+  position:absolute;
+  inset:0 0 38% 0;
+  background:
+    repeating-linear-gradient(90deg,transparent 0,transparent 140px,#070d1688 140px,#070d1688 146px),
+    linear-gradient(180deg,#09111c 0%,#142233 62%,#0a121d 100%);
+  border-bottom:4px solid #263749;
+}
+
+.ceiling-light{
+  position:absolute;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  width:340px;
+  height:14px;
+  border-radius:4px;
+  background:linear-gradient(180deg,#d8f1ff,#79b4d4);
+  box-shadow:0 0 40px #7cc8f055,0 18px 90px #63b5e033;
+  border:2px solid #2c3e50;
+  transition:background .4s,box-shadow .4s;
+}
+.fnaf-stage.alarm-active .ceiling-light{
+  background:linear-gradient(180deg,#ff8592,#d92b3e);
+  box-shadow:0 0 50px #ff3b5288,0 20px 110px #ff2e4744;
+  animation:alarmStrobe 1.6s infinite alternate;
+}
+@keyframes alarmStrobe{
+  0%{opacity:.55}
+  100%{opacity:1}
+}
+
+/* Armored Left Bunker Viewport Looking Out to Mars (with CCTV Security Mode Support) */
+.mars-viewport{
+  position:absolute;
+  top:13%;
+  left:11%;
+  width:29%;
+  height:43%;
+  min-width:240px;
+  border:12px solid #223142;
+  border-bottom-width:18px;
+  border-radius:8px;
+  background:linear-gradient(180deg,#25172b 0%,#9e4e44 58%,#59303b 100%);
+  box-shadow:
+    inset 0 0 32px #03060c,
+    0 10px 30px #000000aa,
+    0 0 0 2px #435970;
+  overflow:hidden;
+}
+.mars-viewport::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(135deg,#ffffff14 0%,transparent 35%,transparent 65%,#00000044 100%),
+    repeating-linear-gradient(90deg,transparent 0,transparent 48%,rgba(18,28,39,.65) 48%,rgba(18,28,39,.65) 52%);
+  pointer-events:none;
+}
+.mars-sun{
+  position:absolute;
+  right:18%;
+  top:16%;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:#ffd1a6;
+  box-shadow:0 0 28px #ffae7a,0 0 60px #ff844b88;
+}
+.mars-dunes{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:36%;
+  background:linear-gradient(165deg,#a95748,#4f2a33);
+  clip-path:polygon(0 45%,16% 18%,34% 48%,55% 12%,76% 42%,100% 15%,100% 100%,0 100%);
+}
+.dust-storm-layer{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,#b85d2d00,#8f3e1d00);
+  transition:background .7s ease;
+}
+.dust-storm-layer.active{
+  background:linear-gradient(180deg,#c4653177 0%,#853819aa 100%);
+}
+.viewport-stencil{
+  position:absolute;
+  top:7px;left:9px;
+  font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.16em;
+  color:#ffffffcc;
+  text-shadow:0 1px 4px #000;
+  z-index:4;
+}
+
+/* CCTV Security Monitor Mode Overlay on Viewport */
+.cctv-overlay{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 50%,#092618cc 0%,#031008ee 85%);
+  border:2px solid #5ef29b44;
+  display:none;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:12px;
+  z-index:5;
+  box-shadow:inset 0 0 40px #032b14aa;
+}
+.mars-viewport.cctv-active .cctv-overlay{display:flex}
+.mars-viewport.cctv-active .mars-sun,
+.mars-viewport.cctv-active .mars-dunes{
+  filter:sepia(1) hue-rotate(90deg) saturate(2.5) contrast(1.4);
+}
+.cctv-overlay::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.35) 3px,rgba(0,0,0,.35) 6px);
+  pointer-events:none;
+  z-index:6;
+}
+.cctv-header{
+  display:flex;
+  justify-content:space-between;
+  font:800 10px/1 ui-monospace,monospace;
+  color:#7dfcb4;
+  letter-spacing:.14em;
+  text-shadow:0 0 8px #5ef29b88;
+  position:relative;
+  z-index:7;
+}
+.cctv-rec{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:#ff5263;
+}
+.cctv-rec::before{
+  content:"";
+  width:7px;height:7px;
+  border-radius:50%;
+  background:#ff5263;
+  box-shadow:0 0 8px #ff5263;
+  animation:ledPulse 1s infinite alternate;
+}
+.cctv-body{
+  position:relative;
+  z-index:7;
+  font:700 11px/1.4 ui-monospace,monospace;
+  color:#b5fce0;
+  background:rgba(4,20,10,.7);
+  border:1px solid #237048;
+  border-radius:4px;
+  padding:8px;
+  box-shadow:inset 0 0 10px #000;
+}
+
+.wall-conduits{
+  position:absolute;
+  top:17%;
+  right:12%;
+  width:22%;
+  height:34%;
+  border:2px solid #243547;
+  border-radius:6px;
+  background:linear-gradient(180deg,#0c1522,#080f18);
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  opacity:.78;
+}
+.pipe-bar{
+  height:8px;
+  border-radius:4px;
+  background:linear-gradient(180deg,#485e73,#1d2b3a);
+  border:1px solid #101923;
+}
+.hazard-trim{
+  height:10px;
+  border-radius:2px;
+  background:repeating-linear-gradient(-45deg,#d4983b,#d4983b 8px,#18212b 8px,#18212b 16px);
+  opacity:.75;
+}
+
+/* =========================================================
+   FOREGROUND ANGLED COMMAND DESK & EXPANDED TACTILE HARDWARE
+   ========================================================= */
+.desk-assembly{
+  position:relative;
+  margin-top:auto;
+  height:62%;
+  width:100%;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:0 4% 14px;
+  z-index:5;
+}
+
+.desk-surface{
+  position:absolute;
+  left:-4%;
+  right:-4%;
+  bottom:-18px;
+  height:66%;
+  background:
+    radial-gradient(ellipse at 50% 0%,#394e63 0%,#1c2938 55%,#0e1622 100%);
+  border-top:6px solid #6b8299;
+  box-shadow:
+    0 -14px 40px #000000cc,
+    inset 0 2px 0 #ffffff33,
+    inset 0 24px 50px #00000066;
+  transform:perspective(750px) rotateX(22deg);
+  transform-origin:bottom center;
+  z-index:1;
+}
+.desk-surface::before{
+  content:"";
+  position:absolute;
+  top:10px;left:8%;right:8%;
+  height:6px;
+  background:repeating-linear-gradient(-45deg,#c98d3288,#c98d3288 10px,#141e2988 10px,#141e2988 20px);
+  border-radius:2px;
+}
+
+.desk-prop-mug{
+  position:absolute;
+  left:6.5%;
+  bottom:22px;
+  width:42px;
+  height:48px;
+  border-radius:4px 4px 8px 8px;
+  background:linear-gradient(90deg,#3d4d5e,#6b7f94 35%,#2c3947 100%);
+  border:1.5px solid #8399b0;
+  box-shadow:0 10px 18px #000000bb;
+  z-index:4;
+}
+.desk-prop-mug::before{
+  content:"";
+  position:absolute;
+  right:-11px;top:10px;
+  width:11px;height:22px;
+  border:3px solid #596d82;
+  border-left:none;
+  border-radius:0 8px 8px 0;
+}
+.desk-prop-mug::after{
+  content:"NASA";
+  position:absolute;
+  top:16px;left:5px;
+  font:800 8px/1 ui-monospace,monospace;
+  color:#d8e8f8;
+  letter-spacing:.06em;
+}
+
+.desk-hardware-rig{
+  position:relative;
+  z-index:6;
+  width:min(1140px,88vw);
+  height:100%;
+  max-height:490px;
+  display:grid;
+  grid-template-columns:1.35fr 0.95fr;
+  gap:20px;
+  align-items:end;
+}
+
+/* =========================================================
+   HIGH-CONTRAST CLEAR CRT TELEMETRY MONITOR (LEFT DESK)
+   ========================================================= */
+.crt-unit{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(175deg,#2a3949 0%,#182330 60%,#0f1722 100%);
+  border:3px solid #53697f;
+  border-bottom-width:8px;
+  border-radius:14px 14px 8px 8px;
+  padding:12px 14px 11px;
+  box-shadow:
+    0 18px 40px #000000dd,
+    inset 0 2px 0 #ffffff33,
+    inset 0 0 0 2px #0b111a;
+  transform:perspective(950px) rotateY(3deg);
+}
+.crt-top-bezel{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 4px 6px;
+  font:800 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.14em;
+  color:#b0c6dc;
+}
+.crt-glass{
+  position:relative;
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  background:radial-gradient(ellipse at 50% 45%,#0b1c2bcc 0%,#040a12dd 88%,#020509ee 100%);
+  border:3px solid #091018;
+  border-radius:10px;
+  padding:11px 13px;
+  box-shadow:
+    inset 0 0 32px #000000ff,
+    0 0 20px #5ce1f622;
+  overflow:hidden;
+}
+.crt-glass::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000033 2px,#00000033 4px);
+  pointer-events:none;
+  z-index:3;
+}
+.crt-glass::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 25% 15%,#ffffff14 0%,transparent 48%);
+  pointer-events:none;
+  z-index:3;
+}
+.crt-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:2px solid #355370;
+  padding-bottom:6px;
+  margin-bottom:8px;
+  position:relative;
+  z-index:2;
+}
+.crt-header b{
+  font:800 12.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.14em;
+  color:#7ae7fc;
+  text-shadow:0 0 10px #5ce1f688;
+}
+.crt-live-tag{
+  font:800 9.5px/1 ui-monospace,monospace;
+  color:var(--green);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.crt-live-tag::before{
+  content:"";
+  width:7px;height:7px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:ledPulse 1.4s infinite alternate;
+}
+
+.screenbody{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  padding-right:3px;
+  position:relative;
+  z-index:2;
+}
+.feed{
+  background:linear-gradient(155deg,#12283ecc,#0a1726ee);
+  border:1.5px solid #3b5c7d;
+  border-radius:7px;
+  padding:10px 12px;
+  box-shadow:inset 0 1px 0 #ffffff1a;
+}
+.feed.fault{
+  border-color:#ff5263;
+  background:linear-gradient(155deg,#381622ee,#1c0a11ee);
+  box-shadow:inset 0 0 16px #ff4b5e33,0 0 10px #ff526322;
+}
+.feed h4{
+  font:800 11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.1em;
+  color:#7ee9fc;
+  margin:0 0 5px;
+}
+.feed.fault h4{color:#ff9aa6}
+.feed p{
+  font:500 12px/1.45 system-ui,sans-serif;
+  color:#d4e6fc;
+  margin:0;
+}
+.screen-actions{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:2px solid #2f4b66;
+  min-height:36px;
+}
+.action-note{
+  font:700 10.5px/1.2 ui-monospace,monospace;
+  color:#a3c2df;
+}
+
+.crt-channel-bar{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:6px;
+  margin-top:9px;
+  padding-top:7px;
+  border-top:1px solid #3a536c;
+}
+.bezel-ch-btn{
+  position:relative;
+  padding:8px 6px;
+  border-radius:5px;
+  border:1.5px solid #637d99;
+  border-top-color:#92aecb;
+  border-bottom-color:#1c2733;
+  background:linear-gradient(180deg,#34495e 0%,#1f2d3d 100%);
+  box-shadow:0 4px 0 #080d14,inset 0 1px 0 #ffffff33;
+  font:800 9.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.08em;
+  color:#e0f0ff;
+  text-align:center;
+  transition:transform .06s,box-shadow .06s,border-color .15s;
+}
+.bezel-ch-btn:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #080d14;
+}
+.bezel-ch-btn.active{
+  border-color:var(--cyan);
+  background:linear-gradient(180deg,#1c526d 0%,#103144 100%);
+  color:#fff;
+  box-shadow:0 4px 0 #080d14,0 0 12px #5ce1f655;
+}
+
+/* =========================================================
+   EXPANDED, TACTILE AEROSPACE SWITCHBOARD (RIGHT DESK)
+   ========================================================= */
+.switchboard-unit{
+  height:95%;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:10px;
+  background:
+    radial-gradient(circle at 50% 0%,#2b3b4c 0%,#182330 65%,#0e1620 100%);
+  border:3px solid #52687e;
+  border-bottom-width:10px;
+  border-radius:12px 12px 6px 6px;
+  padding:12px 14px;
+  box-shadow:
+    0 20px 46px #000000e0,
+    inset 0 2px 0 #ffffff30,
+    inset 0 0 0 2px #091018;
+  transform:perspective(900px) rotateY(-3.5deg) rotateX(5deg);
+  transform-origin:bottom center;
+}
+
+.sb-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:2px solid #3b536a;
+  padding-bottom:6px;
+}
+.sb-header span{
+  font:800 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.14em;
+  color:#bcd4ec;
+}
+
+.annunciator-strip{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  background:#091019;
+  border:2px solid #385068;
+  border-radius:6px;
+  padding:6px;
+}
+.annun-lamp{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:6px 4px;
+  border-radius:4px;
+  background:#121e2b;
+  border:1.5px solid #344c63;
+  font:800 9px/1.1 ui-monospace,monospace;
+  letter-spacing:.1em;
+  color:#89a6c4;
+  transition:all .25s ease;
+}
+.annun-lamp.ok{
+  background:#113829;
+  border-color:#48b886;
+  color:#affcdb;
+  box-shadow:inset 0 0 10px #5ef29b44;
+}
+.annun-lamp.warn{
+  background:#422e11;
+  border-color:#e8a73f;
+  color:#ffe299;
+  box-shadow:0 0 12px #ffbe5555,inset 0 0 10px #ffbe5544;
+}
+.annun-lamp.bad{
+  background:#4a141f;
+  border-color:#ff5263;
+  color:#ffb0b9;
+  box-shadow:0 0 14px #ff526377,inset 0 0 12px #ff526355;
+  animation:ledPulse .9s infinite alternate;
+}
+
+/* Expanded Tactile Bat-Handle Toggles */
+.toggles-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.toggle-module{
+  position:relative;
+  background:linear-gradient(180deg,#1f2d3e 0%,#111924 100%);
+  border:2px solid #4f6a84;
+  border-radius:8px;
+  padding:9px 10px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:inset 0 1px 0 #ffffff26,0 6px 14px #00000099;
+  cursor:pointer;
+  transition:border-color .2s;
+}
+.toggle-module:hover{border-color:var(--cyan)}
+
+.toggle-module::before,.toggle-module::after{
+  content:"+";
+  position:absolute;
+  top:3px;
+  font:700 10px/1 monospace;
+  color:#6884a0;
+}
+.toggle-module::before{left:6px}
+.toggle-module::after{right:6px}
+
+.toggle-label{
+  font:800 9.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.12em;
+  color:#eaf4ff;
+  text-align:center;
+  margin-bottom:5px;
+}
+
+.switch-assembly{
+  position:relative;
+  width:58px;
+  height:62px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.switch-well{
+  width:38px;
+  height:46px;
+  border-radius:6px;
+  background:radial-gradient(circle at 50% 50%,#05090f 0%,#0c141f 100%);
+  border:2.5px solid #56708b;
+  box-shadow:inset 0 4px 10px #000000ee,0 1px 0 #ffffff2a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.hex-nut{
+  width:22px;
+  height:22px;
+  background:linear-gradient(135deg,#abc2d8,#536b82 60%,#2c3a4a);
+  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 6px #000;
+}
+.hex-collar{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#0a1017;
+  border:1.5px solid #8ba4bd;
+}
+.bat-lever{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:10px;
+  height:31px;
+  margin-left:-5px;
+  margin-top:-2px;
+  border-radius:4px 4px 6px 6px;
+  background:linear-gradient(90deg,#7b92a8 0%,#f0f7ff 38%,#9cb3c8 72%,#465a6e 100%);
+  border:1.5px solid #2b3a4a;
+  box-shadow:0 6px 9px #000000cc;
+  transform-origin:50% 2px;
+  transform:rotateX(-34deg) translateY(0px);
+  transition:transform .16s cubic-bezier(.3,1.4,.5,1),box-shadow .16s ease;
+  z-index:3;
+}
+.toggle-module.on .bat-lever{
+  transform:rotateX(38deg) translateY(-25px);
+  box-shadow:0 -5px 9px #000000cc;
+}
+
+.safety-guard{
+  position:absolute;
+  inset:-3px 5px;
+  border-radius:6px 6px 3px 3px;
+  background:linear-gradient(180deg,#ff3b5266 0%,#b81d3088 100%);
+  border:2px solid #ff6879bb;
+  box-shadow:0 4px 10px #000000aa,inset 0 1px 0 #ffffff66;
+  transform-origin:top center;
+  transform:rotateX(0deg);
+  transition:transform .22s cubic-bezier(.25,1.3,.5,1);
+  pointer-events:none;
+  z-index:4;
+}
+.toggle-module.on .safety-guard,
+.toggle-module:hover .safety-guard{
+  transform:rotateX(78deg);
+}
+
+.toggle-state-pill{
+  margin-top:5px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font:800 9px/1 ui-monospace,monospace;
+  letter-spacing:.1em;
+  color:#a3c0db;
+  background:#070d15;
+  border:1.5px solid #38536e;
+  padding:4px 9px;
+  border-radius:4px;
+}
+.toggle-led{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#3b536a;
+  transition:background .2s,box-shadow .2s;
+}
+.toggle-module.on .toggle-led.amber{
+  background:var(--amber);
+  box-shadow:0 0 10px var(--amber);
+}
+.toggle-module.on .toggle-led.green{
+  background:var(--green);
+  box-shadow:0 0 10px var(--green);
+}
+.toggle-module.on .toggle-state-pill{color:#fff;border-color:#6588aa}
+
+/* Expanded Tactile Aerospace Action Push-Buttons */
+.push-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.aero-btn{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:3px;
+  padding:10px 12px 10px 16px;
+  border-radius:6px;
+  border:2px solid #637d99;
+  border-top-color:#92aecb;
+  border-bottom-color:#1c2733;
+  background:linear-gradient(180deg,#34485c 0%,#1f2d3d 55%,#131c26 100%);
+  box-shadow:0 5px 0 #060b11,0 8px 16px #000000aa,inset 0 1px 0 #ffffff3d;
+  font:800 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.08em;
+  color:#f0f7ff;
+  text-align:left;
+  transition:transform .06s,box-shadow .06s,border-color .15s;
+}
+.aero-btn::before{
+  content:"";
+  position:absolute;
+  left:6px;top:7px;bottom:7px;
+  width:4px;
+  border-radius:2px;
+  background:#5a7b9a;
+}
+.aero-btn:hover:not(:disabled){border-color:var(--cyan);filter:brightness(1.15)}
+.aero-btn:active:not(:disabled){
+  transform:translateY(4px);
+  box-shadow:0 1px 0 #060b11,0 3px 6px #000000aa;
+}
+.aero-btn small{
+  font:700 9px/1.2 ui-monospace,monospace;
+  color:#a8c4df;
+}
+.aero-btn.fault-ready{
+  border-color:#f5b853;
+  background:linear-gradient(180deg,#523e1e 0%,#30230f 100%);
+}
+.aero-btn.fault-ready::before{
+  background:var(--amber);
+  box-shadow:0 0 10px var(--amber);
+}
+.aero-btn.hazard-btn{
+  grid-column:1 / -1;
+  align-items:center;
+  text-align:center;
+  padding:11px 14px;
+  border:2px solid #ff5263;
+  background:repeating-linear-gradient(-45deg,#471a27,#471a27 10px,#2e0f18 10px,#2e0f18 20px);
+  box-shadow:0 5px 0 #120508,0 0 18px #ff4d6344,inset 0 1px 0 #ff9aa655;
+}
+.aero-btn.hazard-btn::before{
+  background:var(--red);
+  box-shadow:0 0 10px var(--red);
+}
+.aero-btn.hazard-btn.ready-tx{
+  animation:ledPulse 1.1s infinite alternate;
+}
+
+/* =========================================================
+   FLOATING TOP HUD & SIDE DRAWERS
+   ========================================================= */
+.floating-top-hud{
+  position:fixed;
+  top:10px;
+  left:12px;
+  right:12px;
+  z-index:30;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  padding:7px 13px;
+  background:rgba(10,18,30,.82);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1.5px solid #435e7a;
+  border-radius:10px;
+  box-shadow:0 10px 32px #000000aa;
+}
+.hud-brand{display:flex;align-items:center;gap:9px}
+.hud-brand-icon{
+  font-size:18px;
+  background:linear-gradient(145deg,#f0835a,#c45432);
+  border-radius:6px;
+  padding:5px 8px;
+}
+.hud-brand h1{
+  margin:0;
+  font:800 13.5px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.1em;
+}
+.hud-brand span{
+  display:block;
+  font:700 8.5px/1.1 ui-monospace,monospace;
+  color:var(--muted);
+  letter-spacing:.15em;
+}
+
+.hud-meters{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(115px,1fr));
+  gap:9px;
+}
+.f-meter{
+  background:rgba(6,12,21,.82);
+  border:1.5px solid #36536e;
+  border-radius:7px;
+  padding:5px 9px;
+}
+.f-meter-head{
+  display:flex;
+  justify-content:space-between;
+  font:800 9.5px/1 ui-monospace,monospace;
+  color:var(--muted);
+}
+.f-meter-head b{color:#fff;font-size:12px}
+.f-bar{
+  height:6px;
+  background:#02060c;
+  border-radius:3px;
+  overflow:hidden;
+  margin-top:5px;
+}
+.f-bar span{display:block;height:100%;width:50%;background:var(--green);transition:width .25s}
+.f-bar.blue span{background:var(--cyan)}
+.f-bar.red span{background:var(--red)}
+.f-bar.purple span{background:var(--violet)}
+
+.hud-controls{display:flex;align-items:center;gap:7px}
+.hud-clock{
+  background:rgba(6,12,21,.88);
+  border:1.5px solid #435e7a;
+  border-radius:7px;
+  padding:5px 9px;
+  text-align:right;
+}
+.hud-clock b{
+  display:block;
+  font:800 12.5px/1.1 ui-monospace,monospace;
+  color:var(--amber);
+}
+.hud-clock small{
+  font:800 8.5px/1 ui-monospace,monospace;
+  color:var(--cyan);
+}
+.hud-mini-btn{
+  padding:7px 10px;
+  border-radius:7px;
+  border:1.5px solid #526f8c;
+  background:rgba(20,34,52,.9);
+  font:800 10px/1 ui-monospace,monospace;
+  letter-spacing:.06em;
+  color:#f0f7ff;
+}
+.hud-mini-btn:hover{border-color:var(--cyan);background:#1b314a}
+
+.float-side{
+  position:fixed;
+  top:68px;
+  width:242px;
+  max-height:38vh;
+  z-index:25;
+  background:rgba(10,18,30,.8);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  border:1.5px solid #405c78;
+  border-radius:10px;
+  padding:9px 11px;
+  box-shadow:0 12px 32px #00000088;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.float-left{left:12px}
+.float-right{right:12px}
+.float-side.collapsed .float-body{display:none}
+.float-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1.5px solid #314a63;
+  padding-bottom:5px;
+}
+.float-head h3{
+  margin:0;
+  font:800 10px/1 ui-monospace,monospace;
+  letter-spacing:.12em;
+  color:var(--cyan);
+}
+.collapse-btn{
+  background:none;
+  border:1.5px solid #435e7a;
+  border-radius:4px;
+  padding:2px 6px;
+  font:800 9.5px/1 monospace;
+  color:var(--muted);
+}
+.collapse-btn:hover{color:#fff;border-color:var(--cyan)}
+.float-body{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  min-height:0;
+  overflow:auto;
+}
+.mission-note{
+  font:500 11px/1.4 system-ui,sans-serif;
+  color:#d0e2f5;
+  background:rgba(6,12,20,.7);
+  border:1.5px solid #314a63;
+  border-radius:6px;
+  padding:6px 8px;
+}
+.log-list{
+  max-height:135px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.log-list p{
+  margin:0;
+  font:500 10px/1.38 system-ui,sans-serif;
+  color:var(--muted);
+  border-left:2.5px solid #5a82a6;
+  padding-left:7px;
+}
+.log-list b{color:#f0f7ff}
+
+.hint-box{
+  font:500 10.5px/1.4 system-ui,sans-serif;
+  color:#d4e6fc;
+  background:rgba(6,12,20,.7);
+  border:1.5px solid #314a63;
+  border-radius:6px;
+  padding:6px 8px;
+}
+.side-btn-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.side-btn-row .hud-mini-btn{
+  font-size:9px;
+  padding:6px 7px;
+  text-align:center;
+}
+.nasa-ref-links{
+  display:flex;
+  justify-content:space-between;
+  font:700 9px/1 ui-monospace,monospace;
+  color:#8bb0d4;
+}
+.nasa-ref-links a{color:#7cd8f0;text-decoration:none}
+
+/* =========================================================
+   SCROLLABLE MAIN BRIEFING GATE, MODALS & END OVERLAYS
+   ========================================================= */
+.gate-overlay{
+  position:fixed;
+  inset:0;
+  z-index:80;
+  background:radial-gradient(ellipse at 50% 25%,#1b3248ee 0%,#050a12fa 75%);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px 18px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+.gate-overlay.hidden{display:none!important}
+.gate-card{
+  max-width:540px;
+  width:100%;
+  margin:auto 0;
+  background:linear-gradient(160deg,#152538,#0c1623);
+  border:2px solid #537291;
+  border-radius:12px;
+  padding:26px;
+  box-shadow:0 24px 80px #000000dd,inset 0 1px 0 #ffffff22;
+}
+.gate-kicker{
+  font:800 10.5px/1 ui-monospace,monospace;
+  letter-spacing:.18em;
+  color:var(--amber);
+  margin-bottom:6px;
+}
+.gate-card h2{
+  margin:0 0 10px;
+  font:800 23px/1.2 ui-monospace,monospace;
+  letter-spacing:.08em;
+}
+.gate-card p{
+  color:#c2d2e2;
+  font:500 13.5px/1.55 system-ui,sans-serif;
+  margin:0 0 16px;
+}
+.gate-rules{
+  background:#07101b;
+  border:1.5px solid #36536e;
+  border-radius:7px;
+  padding:11px 13px;
+  margin-bottom:18px;
+  font:500 12px/1.5 system-ui,sans-serif;
+  color:#b0c6dc;
+}
+.gate-rules strong{color:var(--cyan)}
+.start-btn{
+  width:100%;
+  padding:12px 16px;
+  border-radius:7px;
+  border:2px solid #63c79f;
+  background:linear-gradient(180deg,#296654 0%,#163d31 100%);
+  font:800 12.5px/1 ui-monospace,monospace;
+  letter-spacing:.12em;
+  color:#fff;
+  box-shadow:0 6px 18px #00000088;
+}
+.start-btn:hover{filter:brightness(1.15)}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:#02050bd9;
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px 15px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  z-index:90;
+}
+.modal.show{display:flex}
+.modalcard{
+  max-width:460px;
+  width:100%;
+  margin:auto 0;
+  padding:22px;
+  border:2px solid #5a7b9a;
+  border-radius:11px;
+  background:linear-gradient(160deg,#152538,#0c1623);
+  box-shadow:0 20px 70px #000;
+}
+.modalcard h2{
+  margin:0 0 9px;
+  font:800 16px/1.2 ui-monospace,monospace;
+  letter-spacing:.08em;
+  color:var(--cyan);
+}
+.modalcard p{color:#d0e2f5;font:500 13px/1.55 system-ui,sans-serif;margin:0 0 16px}
+
+.end{
+  position:fixed;
+  inset:0;
+  z-index:95;
+  background:#050b14f7;
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+.end.show{display:flex}
+.endcard{
+  max-width:540px;
+  width:100%;
+  margin:auto 0;
+  text-align:center;
+  border:2px solid #5a7b9a;
+  background:linear-gradient(160deg,#152538,#0c1623);
+  border-radius:14px;
+  padding:28px;
+  box-shadow:0 24px 80px #000;
+}
+.endcard .big{font-size:52px}
+.endcard h2{font-size:24px;margin:6px}
+.endcard p{color:#bdcad8;font:500 13.5px/1.55 system-ui,sans-serif}
+.endstats{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;color:var(--cyan);font:800 12.5px/1 ui-monospace,monospace;margin-bottom:18px}
+
+@media(max-width:900px){
+  .floating-top-hud{grid-template-columns:1fr;gap:6px}
+  .float-side{display:none}
+  .desk-hardware-rig{grid-template-columns:1fr;max-height:none;height:78%}
+  .crt-unit,.switchboard-unit{transform:none}
+}
+
+.vent-cams{grid-column:1/-1;display:flex;gap:6px}
+.vent-cams .bezel-ch-btn{flex:1;padding:6px 2px}
+.vfeed{grid-column:1/-1;position:relative;border:1.5px solid #237048;background:#020805;overflow:hidden;aspect-ratio:16/6}
+.vfeed svg{width:100%;height:100%;display:block;filter:sepia(1) hue-rotate(80deg) saturate(1.5) brightness(.95)}
+.vtag{position:absolute;left:8px;top:6px;z-index:2;font:800 10px/1 ui-monospace,monospace;color:#7dfcb4;text-shadow:0 0 6px #000;letter-spacing:.1em}
+.vstatic{position:absolute;inset:0;z-index:1;opacity:0;pointer-events:none;background:repeating-linear-gradient(0deg,#ffffff44 0 1px,transparent 1px 3px);animation:vfl .12s steps(2) infinite}
+.vfeed.storm .vstatic{opacity:.6}
+.vfeed.storm .vsmoke{opacity:.45}
+@keyframes vfl{50%{transform:translateY(2px)}}
+.vsmoke circle{fill:#dfe8e2;opacity:0;transform-box:fill-box;transform-origin:center;animation:vrise 2.4s ease-out infinite}
+.vsmoke circle:nth-child(2){animation-delay:.8s}.vsmoke circle:nth-child(3){animation-delay:1.6s}
+.vsmoke.heavy circle{fill:#ffffff;animation-duration:1.6s}
+@keyframes vrise{0%{opacity:0;transform:translateY(5px) scale(.5)}30%{opacity:.65}100%{opacity:0;transform:translateY(-30px) scale(2.3)}}
+
+/* --- vent cam realism (night-vision CCTV look) --- */
+.vfeed svg{animation:vdrift 9s ease-in-out infinite alternate,vflick 5s steps(1) infinite}
+@keyframes vdrift{from{transform:translate(-1px,.5px) scale(1.015)}to{transform:translate(1px,-.5px) scale(1.015)}}
+@keyframes vflick{0%,92%,100%{opacity:1}93%{opacity:.86}94%{opacity:1}96%{opacity:.92}}
+.vscan{position:absolute;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.30) 0 1px,transparent 1px 3px)}
+.vroll{position:absolute;left:0;right:0;top:0;height:26%;z-index:1;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(190,255,215,.08),transparent);animation:vroll 6s linear infinite}
+@keyframes vroll{0%{transform:translateY(-40%)}100%{transform:translateY(420%)}}
+.vdot{font-style:normal;animation:vblink 1.2s steps(1) infinite}
+@keyframes vblink{50%{opacity:.15}}
+.vts,.vir{position:absolute;bottom:6px;z-index:2;font:700 9px/1 ui-monospace,monospace;color:#7dfcb4;text-shadow:0 0 5px #000;letter-spacing:.08em}
+.vts{right:8px}.vir{left:8px;opacity:.85}
+.vled{fill:#2f6b4a}.vled.bad{fill:#ffffff;animation:vblink .6s steps(1) infinite}
+.vhaze{opacity:.55;animation:vbreathe 3s ease-in-out infinite alternate}
+@keyframes vbreathe{to{opacity:.95}}
+
+.hud-meters{grid-template-columns:repeat(3,minmax(115px,1fr))}
+.crt-channel-bar{grid-template-columns:repeat(3,1fr)}
+.dust-veil{position:fixed;inset:0;z-index:6;pointer-events:none;opacity:0;transition:opacity .6s;background:radial-gradient(ellipse at 50% 50%,#c4653122 0%,#9b4a22d0 100%)}
+#fnafStage{transition:filter .6s}
+.feed.wide{grid-column:1/-1}
+.dbar{height:6px;background:#12283e;margin-top:6px}.dbar i{display:block;height:100%}
+.vent-cams .bezel-ch-btn{font-size:8.5px}
+
+.crt-channel-bar{grid-template-columns:repeat(4,1fr)}
+.toast{position:fixed;top:84px;left:50%;transform:translateX(-50%);z-index:12;max-width:80vw;background:#0d1624f2;border:1px solid var(--line);color:var(--ink);padding:8px 14px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;font:700 12px/1.3 ui-monospace,monospace}
+.toast.show{opacity:1}
+
+/* --- POWER SAVE: surroundings go dark, interface stays fully lit --- */
+.room-world::before,.bunker-wall::before{content:"";position:absolute;inset:0;background:rgba(1,3,8,.78);opacity:0;pointer-events:none;transition:opacity .6s ease}
+.fnaf-stage.lights-off .room-world::before,.fnaf-stage.lights-off .bunker-wall::before{opacity:1}
+.ceiling-light,.wall-conduits,.desk-surface,.desk-prop-mug{transition:filter .6s ease,background .4s,box-shadow .4s}
+.fnaf-stage.lights-off .wall-conduits,.fnaf-stage.lights-off .desk-surface,.fnaf-stage.lights-off .desk-prop-mug{filter:brightness(.3)}
+.fnaf-stage.lights-off .ceiling-light,.fnaf-stage.lights-off.alarm-active .ceiling-light{
+  background:linear-gradient(180deg,#26333f,#141d27);box-shadow:none;animation:none;opacity:1;
+}
+
+/* =========================================================
+   ACCESSIBILITY + MOBILE PLAY LAYOUT
+   Larger text, touch targets and a scrollable portrait layout.
+   ========================================================= */
+:root { --touch-size: 48px; }
+button, [role="switch"] { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button:focus-visible, [role="switch"]:focus-visible {
+  outline: 3px solid #ffe08a;
+  outline-offset: 3px;
+}
+.feed p { font-size: 14px; line-height: 1.5; }
+.feed h4 { font-size: 12px; }
+.action-note { font-size: 12px; line-height: 1.35; }
+.bezel-ch-btn { min-height: 42px; font-size: 11px; }
+.aero-btn { min-height: 62px; font-size: 12px; }
+.aero-btn small { font-size: 11px; }
+.toggle-label { font-size: 11px; }
+.sb-header span, .annun-lamp { font-size: 11px; }
+.f-meter-head { font-size: 11px; }
+.f-meter-head b { font-size: 14px; }
+.mission-note, .hint-box { font-size: 12px; line-height: 1.5; }
+.gate-card p, .modalcard p, .endcard p { font-size: 15px; line-height: 1.55; }
+.start-btn { min-height: 50px; font-size: 14px; }
+.toast { font-size: 13px; line-height: 1.4; }
+
+@media (max-width: 760px) {
+  html, body {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    font-size: 16px;
+  }
+  .floating-top-hud {
+    position: sticky;
+    top: 0;
+    left: auto; right: auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 0 0 12px 12px;
+    z-index: 50;
+  }
+  .hud-brand { gap: 7px; min-width: 0; }
+  .hud-brand-icon { font-size: 20px; padding: 5px 7px; }
+  .hud-brand h1 { font-size: 12px; letter-spacing: .04em; }
+  .hud-brand span { font-size: 9px; letter-spacing: .07em; }
+  .hud-controls { gap: 5px; }
+  .hud-clock { padding: 6px 7px; }
+  .hud-clock b { font-size: 11px; }
+  .hud-clock small { font-size: 9px; }
+  .hud-mini-btn { min-height: 42px; min-width: 42px; padding: 7px; font-size: 11px; }
+  .hud-meters {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .f-meter { padding: 7px 7px; min-width: 0; }
+  .f-meter-head { gap: 3px; font-size: 9px; }
+  .f-meter-head b { font-size: 12px; }
+  .f-bar { height: 8px; }
+  .float-side { display: none !important; }
+
+  .fnaf-stage {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    perspective: none;
+    touch-action: pan-y;
+  }
+  .room-world {
+    position: relative;
+    inset: auto;
+    min-height: 0;
+    display: block;
+    transform: none !important;
+    transition: none;
+    padding-bottom: 18px;
+  }
+  .bunker-wall {
+    position: relative;
+    inset: auto;
+    height: 145px;
+    border-bottom-width: 3px;
+  }
+  .ceiling-light { width: 44%; height: 10px; top: 12px; }
+  .mars-viewport {
+    top: 30px; left: 5%;
+    width: 43%; height: 95px;
+    min-width: 0;
+    border-width: 6px;
+    border-bottom-width: 8px;
+  }
+  .viewport-stencil { font-size: 8px; }
+  .wall-conduits {
+    top: 32px; right: 5%;
+    width: 38%; height: 86px;
+    padding: 6px;
+  }
+  .pipe-bar { height: 6px; }
+  .desk-assembly {
+    position: relative;
+    height: auto;
+    margin: 0;
+    padding: 12px 10px 20px;
+    display: block;
+  }
+  .desk-surface { display: none; }
+  .desk-prop-mug { display: none; }
+  .desk-hardware-rig {
+    width: 100%;
+    max-height: none;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+  }
+  .crt-unit, .switchboard-unit {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    min-width: 0;
+    transform: none;
+    border-radius: 12px;
+  }
+  .crt-unit { min-height: 490px; padding: 10px; }
+  .crt-top-bezel { font-size: 9px; }
+  .crt-glass { min-height: 350px; padding: 10px; }
+  .crt-header b { font-size: 12px; letter-spacing: .06em; }
+  .crt-live-tag { font-size: 10px; }
+  .screenbody {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    overflow: visible;
+    padding: 0 1px 5px;
+  }
+  .feed { padding: 11px; border-radius: 8px; }
+  .feed p { font-size: 14px; line-height: 1.5; }
+  .feed h4 { font-size: 12px; letter-spacing: .05em; }
+  .screen-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .screen-actions > div { display: grid !important; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px !important; }
+  .screen-actions .bezel-ch-btn { min-height: 46px; font-size: 11px; padding: 8px 5px; }
+  .crt-channel-bar {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .crt-channel-bar .bezel-ch-btn {
+    min-height: 48px;
+    font-size: 11px;
+    padding: 8px 5px;
+    letter-spacing: .02em;
+  }
+  .switchboard-unit {
+    min-height: 0;
+    gap: 12px;
+    padding: 13px;
+  }
+  .sb-header { padding-bottom: 9px; }
+  .sb-header span { font-size: 11px; letter-spacing: .06em; }
+  .annunciator-strip { gap: 6px; padding: 7px; }
+  .annun-lamp { min-height: 42px; font-size: 10px; }
+  .toggles-row { gap: 9px; }
+  .toggle-module { min-height: 150px; padding: 12px 8px; }
+  .toggle-label { font-size: 10px; letter-spacing: .05em; }
+  .switch-assembly { transform: scale(1.08); margin: 4px 0; }
+  .toggle-state-pill { font-size: 10px; min-height: 28px; }
+  .push-grid { gap: 9px; }
+  .aero-btn {
+    min-height: 70px;
+    padding: 12px 10px 12px 15px;
+    font-size: 12px;
+    letter-spacing: .02em;
+  }
+  .aero-btn small { font-size: 10px; }
+  .aero-btn.hazard-btn { min-height: 60px; }
+  .vent-cams { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+  .vent-cams .bezel-ch-btn { min-height: 42px; padding: 7px 3px; font-size: 10px; }
+  .vfeed { aspect-ratio: 16 / 8; }
+  .vtag { font-size: 9px; }
+  .dust-veil { position: fixed; }
+  .gate-overlay {
+    position: fixed;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    align-items: flex-start;
+    padding: 14px;
+  }
+  .gate-card { margin: auto 0; padding: 19px 16px; }
+  .gate-card h2 { font-size: 21px; }
+  .gate-kicker { font-size: 10px; }
+  .gate-rules { font-size: 14px; line-height: 1.55; padding: 12px; }
+  .modal {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    align-items: flex-start;
+  }
+  .modalcard { margin: auto 0; padding: 19px 16px; }
+  .end {
+    position: fixed;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    align-items: flex-start;
+  }
+  .endcard { margin: auto 0; padding: 22px 16px; }
+  .toast { top: 145px; max-width: 92vw; text-align: center; }
+}
+
+@media (max-width: 380px) {
+  .hud-brand h1 { font-size: 10px; }
+  .hud-brand span { font-size: 8px; }
+  .hud-clock b { font-size: 10px; }
+  .hud-mini-btn { min-width: 36px; padding: 5px; }
+  .crt-unit { min-height: 520px; }
+  .crt-channel-bar .bezel-ch-btn { font-size: 10px; }
+  .vent-cams { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .floating-top-hud { position: sticky; }
+  .bunker-wall { height: 90px; }
+  .crt-unit { min-height: 390px; }
+}
+
+
+/* Player name and clearer controls */
+.commander-label{display:block;margin:15px 0 7px;color:#8feaff;font:800 13px/1.3 system-ui,sans-serif;letter-spacing:.08em}
+.commander-input{display:block;width:100%;min-height:54px;padding:12px 14px;border:2px solid #6485a3;border-radius:9px;background:#071321;color:#fff;font:600 18px/1.3 system-ui,sans-serif;outline:none}
+.commander-input:focus{border-color:#70e5ff;box-shadow:0 0 0 3px #70e5ff35}
+.commander-help{margin:6px 0 0!important;color:#b8cce0!important;font-size:13px!important}
+.commander-input::placeholder{color:#8ea3b8}
+@media (max-width:760px){
+  .gate-overlay{padding:12px!important}
+  .gate-card{width:min(100%,560px);padding:22px 18px!important}
+  .gate-card h2{font-size:clamp(23px,6vw,30px)!important;line-height:1.15}
+  .gate-card p{font-size:17px!important;line-height:1.6!important}
+  .gate-rules{font-size:16px!important;line-height:1.65!important;padding:15px!important}
+  .commander-label{font-size:15px;margin-top:18px}
+  .commander-input{min-height:58px;font-size:19px}
+  .start-btn{width:100%;min-height:58px;font-size:16px!important}
+  .hud-brand h1{font-size:14px!important}
+  .hud-brand span{font-size:10px!important}
+  .hud-brand-icon{font-size:24px!important}
+  .hud-clock b{font-size:13px!important}
+  .hud-clock small{font-size:11px!important}
+  .hud-mini-btn{min-width:48px!important;min-height:48px!important;font-size:13px!important}
+  .f-meter{padding:9px!important}
+  .f-meter-head{font-size:11px!important}
+  .f-meter-head b{font-size:14px!important}
+  .f-bar{height:10px!important}
+  .crt-unit{min-height:0!important;padding:12px!important}
+  .crt-glass{min-height:0!important;padding:12px!important}
+  .crt-header b{font-size:14px!important}
+  .crt-live-tag{font-size:11px!important}
+  .feed{padding:13px!important}
+  .feed h4{font-size:14px!important}
+  .feed p{font-size:16px!important;line-height:1.6!important}
+  .bezel-ch-btn,.crt-channel-bar .bezel-ch-btn,.screen-actions .bezel-ch-btn{
+    min-height:54px!important;font-size:12px!important;padding:10px 7px!important
+  }
+  .vent-cams{gap:7px!important;flex-wrap:wrap}
+  .vent-cams .bezel-ch-btn{flex:1 1 21%;min-height:50px!important;font-size:12px!important}
+  .aero-btn{min-height:70px!important;font-size:14px!important;padding:13px!important}
+  .aero-btn small{font-size:12px!important}
+  .toggle-label{font-size:13px!important}
+  .mission-note,.hint-box{font-size:14px!important;line-height:1.6!important}
+  .sb-header span,.annun-lamp{font-size:12px!important}
+  .action-note{font-size:13px!important}
+  .modalcard,.endcard{width:min(100%,560px);padding:23px 18px!important}
+  .modalcard h2,.endcard h2{font-size:23px!important}
+  .modalcard p,.endcard p{font-size:16px!important;line-height:1.6!important}
+  .endstats{font-size:14px!important}
+  .toast{font-size:14px!important;max-width:94vw}
+}
+@media (max-width:380px){
+  .hud-brand h1{font-size:13px!important}
+  .hud-brand span{font-size:9px!important}
+  .crt-unit{min-height:0!important}
+  .crt-channel-bar .bezel-ch-btn{font-size:11px!important}
+}
+
+
+/* ===== HARD MODE: difficulty picker, dead camera, wire repair game ===== */
+.diff-label{margin:15px 0 7px;color:#8feaff;font:800 13px/1.3 system-ui,sans-serif;letter-spacing:.08em}
+.mode-row .mode-btn[data-mode="live"].active{border-color:#ffbe55;background:#30240f;box-shadow:0 0 0 3px #ffbe5530}
+#liveSetup[hidden],.aero-btn[hidden]{display:none!important}
+.live-data-note{color:#ffdb94!important}
+.live-source-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:7px;font:700 10px/1.4 ui-monospace,monospace}
+.live-source-links a{color:#7cd8f0;text-decoration:underline}
+#radiationBarrierBtn{border-color:#b6a0ff;background:linear-gradient(180deg,#34275a,#19132f)}
+#repairPanelsBtn{border-color:#ffbe55;background:linear-gradient(180deg,#523e1e,#30230f)}
+
+.diff-row{display:flex;gap:10px}
+.diff-btn{flex:1;text-align:left;padding:11px 12px;border:2px solid #435970;border-radius:9px;background:#0a1626;color:#dbe9f7;display:flex;flex-direction:column;gap:3px;min-height:62px}
+.diff-btn b{font:800 14px/1.2 system-ui,sans-serif;letter-spacing:.06em}
+.diff-btn small{font:500 12px/1.35 system-ui,sans-serif;color:#9fb7cf}
+.diff-btn.active{border-color:var(--cyan);background:#0f2a3d;box-shadow:0 0 0 3px #5ce1f630}
+.diff-btn[data-diff="hard"].active{border-color:var(--red);background:#2b0f18;box-shadow:0 0 0 3px #ff526330}
+.diff-note{margin:8px 0 0!important;font-size:13px!important;color:#b8cce0!important}
+@media (max-width:760px){.diff-row{flex-direction:column}.diff-btn{min-height:68px}.diff-btn b{font-size:16px}.diff-btn small{font-size:14px}.diff-note{font-size:15px!important}}
+
+.vdead{grid-column:1/-1;position:relative;min-height:150px;border:1.5px solid #8a2c38;background:#0a0305;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:14px}
+.vdead .vstatic{opacity:.5}
+.vdead-in{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:420px}
+.vdead-in b{font:800 14px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:#ff7a89;text-shadow:0 0 10px #ff526388;animation:deadBlink 1s steps(2) infinite}
+.vdead-in span{font:600 13px/1.45 system-ui,sans-serif;color:#ffd0d6}
+@keyframes deadBlink{50%{opacity:.35}}
+.wire-open{border:2px solid var(--red);background:#3a1119;color:#ffd0d6;border-radius:8px;padding:10px 14px;font:800 12px/1.2 ui-monospace,monospace;letter-spacing:.08em;min-height:44px}
+.wire-open:hover{filter:brightness(1.25)}
+
+.wire-overlay{position:fixed;inset:0;z-index:40;display:none;align-items:flex-start;justify-content:center;background:#02060bd9;padding:12px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+.wire-overlay.show{display:flex}
+.wire-card{width:min(100%,480px);background:linear-gradient(180deg,#14212f,#0b131d);border:2px solid #5ef29b88;border-radius:14px;padding:14px 16px 16px;box-shadow:0 20px 60px #000d,0 0 40px #5ef29b22;margin:auto}
+.wire-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wire-head b{font:800 13px/1.25 ui-monospace,monospace;letter-spacing:.1em;color:#7dfcb4}
+.wire-x{border:2px solid #53697f;background:#101b28;color:#dbe9f7;border-radius:8px;padding:8px 11px;font:800 11px/1 ui-monospace,monospace;letter-spacing:.06em;min-height:38px}
+.wire-info{margin:8px 0 0;font:600 13px/1.5 system-ui,sans-serif;color:#cfe3f6}
+.wire-info em{color:#ffbe55;font-style:normal;font-weight:800}
+.wire-status{margin:6px 0 0;font:700 11px/1.3 ui-monospace,monospace;color:#9fb7cf;letter-spacing:.05em}
+#wireSvg{width:100%;height:auto;display:block;touch-action:none;background:#050b12;border:1px solid #28405a;border-radius:8px;margin-top:9px;user-select:none;-webkit-user-select:none}
+.wire-note{display:block;margin-top:8px;font:600 12px/1.4 system-ui,sans-serif;color:#9fb7cf}
+.wire-ok{color:#7dfcb4;font-weight:800}
+@media (max-width:760px){.wire-info{font-size:15px}.wire-note{font-size:13px}.wire-head b{font-size:12px}.vdead-in span{font-size:15px}}
+
+
+/* ===== DISPLAY POSITION + HIGH-LEGIBILITY MONITOR UPDATE ===== */
+@media (min-width: 761px) {
+  /* Lift both desk displays and their controls slightly together. */
+  .desk-hardware-rig {
+    /* Lifted so the bottom monitor/tab buttons stay fully on-screen and clickable
+       (room-world bleeds 36px below the viewport + 10px parallax shift). */
+    transform: translateY(-56px);
+  }
+}
+
+/* Reduce CRT scanline interference so labels remain crisp. */
+.crt-glass::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    #00000018 3px,
+    #00000018 4px
+  );
+}
+.crt-glass::after {
+  background: radial-gradient(circle at 25% 15%, #ffffff0a 0%, transparent 48%);
+}
+
+/* Sharper, larger text on the main monitor. */
+.feed h4 {
+  font-size: 13px;
+  line-height: 1.3;
+  letter-spacing: .055em;
+  color: #9af1ff;
+  text-shadow: none;
+}
+.feed p {
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 550;
+  color: #f0f6ff;
+}
+.action-note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #d0e5fa;
+}
+.crt-header b {
+  font-size: 14px;
+  letter-spacing: .075em;
+  text-shadow: none;
+}
+.crt-top-bezel {
+  font-size: 11px;
+  letter-spacing: .09em;
+}
+
+/* Make monitor tabs and switchboard labels easier to read. */
+.bezel-ch-btn {
+  font-size: 11px;
+  line-height: 1.25;
+  letter-spacing: .035em;
+  color: #ffffff;
+  text-shadow: none;
+}
+.sb-header span {
+  font-size: 12px;
+  letter-spacing: .075em;
+}
+.annun-lamp {
+  font-size: 10.5px;
+  letter-spacing: .055em;
+  color: #c4d9ee;
+}
+.toggle-label {
+  font-size: 11px;
+  line-height: 1.25;
+  letter-spacing: .055em;
+}
+.toggle-state-pill {
+  font-size: 10px;
+  letter-spacing: .055em;
+}
+.aero-btn {
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: .035em;
+  color: #ffffff;
+  text-shadow: none;
+}
+.aero-btn small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #e0edfa;
+}
+
+/* Keep the mobile layout in normal document flow. */
+@media (max-width: 760px) {
+  .desk-hardware-rig {
+    transform: none;
+  }
+  .crt-glass::before {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      #00000012 3px,
+      #00000012 4px
+    );
+  }
+  .feed h4 {
+    font-size: 14px;
+  }
+  .feed p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .bezel-ch-btn {
+    font-size: 12px;
+  }
+}
+
+
+/* ===== CRISP TEXT UPDATE: flat (no 3D skew), no scanlines, larger type ===== */
+html,body{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+/* 3D perspective tilts resample text and make it soft - keep panels flat. */
+.crt-unit,.switchboard-unit{transform:none!important}
+.room-world{will-change:auto}
+/* Scanlines/glare sat on top of the text - remove them. */
+.crt-glass::before,.crt-glass::after{display:none!important}
+.crt-glass{background:#050d16!important}
+/* Remove glow/shadow halos around text. */
+.crt-header b,.cctv-body,.vtag,.vts,.vir,.vdead-in b{text-shadow:none!important}
+
+/* Larger, higher-contrast monitor text. */
+.crt-top-bezel{font-size:12.5px!important;color:#dbe9f7!important;letter-spacing:.07em!important}
+.crt-header b{font-size:17px!important;color:#aef3ff!important;letter-spacing:.05em!important}
+.crt-live-tag{font-size:12px!important}
+.feed h4{font-size:15px!important;color:#b8f6ff!important;font-weight:800!important}
+.feed p,.feed li,.feed span,.feed div{font-size:16px!important;line-height:1.5!important;color:#ffffff;font-weight:600}
+.feed b{color:#ffffff}
+.action-note{font-size:14px!important;color:#e8f3ff!important;line-height:1.45!important}
+.bezel-ch-btn{font-size:14px!important;font-weight:800!important;color:#fff!important;letter-spacing:.02em!important}
+
+/* Larger, higher-contrast control panel text. */
+.sb-header span{font-size:14px!important;color:#e3eefa!important;font-weight:800!important}
+.annun-lamp{font-size:13px!important;color:#f0f7ff!important;font-weight:800!important}
+.toggle-label{font-size:13px!important;color:#ffffff!important;font-weight:800!important}
+.toggle-state-pill{font-size:12px!important;color:#ffffff!important;font-weight:800!important}
+.aero-btn{font-size:14px!important;font-weight:800!important;color:#fff!important}
+.aero-btn small{font-size:13px!important;color:#eef6ff!important;font-weight:600!important}
+
+/* Other on-screen text. */
+.f-meter-head b{font-size:15px!important}
+.mission-note,.hint-box{font-size:14px!important;line-height:1.55!important;color:#eef6ff!important}
+.toast{font-size:15px!important;font-weight:600!important}
+.cctv-header span,.cctv-body{font-size:13px!important}
+.viewport-stencil{font-size:12px!important}
+.vtag{font-size:12px!important}
+.vts,.vir{font-size:11px!important}
+
+
+/* Keep the panels inside their box on shorter screens (content scrolls inside the monitor). */
+@media (min-width:761px){
+  .desk-hardware-rig{grid-template-rows:minmax(0,1fr)!important;height:min(100%,calc(100vh - 150px))!important;max-height:540px!important}
+  .crt-unit,.switchboard-unit{min-height:0!important;height:100%!important}
+  .switchboard-unit{height:95%!important}
+}
+@media (min-width:761px) and (max-height:760px){
+  .feed h4{font-size:13px!important}
+  .feed p,.feed li,.feed span,.feed div{font-size:14px!important;line-height:1.4!important}
+  .action-note{font-size:12.5px!important}
+  .bezel-ch-btn{font-size:12.5px!important}
+  .aero-btn{font-size:13px!important}.aero-btn small{font-size:12px!important}
+  .crt-header b{font-size:15px!important}
+}
+
+/* ===== MONITOR PANEL LAYOUT (desktop): main panel scrolls while cameras & graphs fit ===== */
+@media (min-width:761px){
+  .desk-hardware-rig{height:min(560px,calc(100vh - 135px))!important;max-height:none!important}
+
+  /* Allow the main monitor body (.screenbody) to scroll vertically, not individual .feed boxes */
+  .screenbody{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain;
+    padding-right:6px;
+    scrollbar-width:thin;
+    scrollbar-color:#4b6d8f #07111c;
+  }
+  .screenbody::-webkit-scrollbar{width:7px}
+  .screenbody::-webkit-scrollbar-track{background:#07111c;border-radius:4px}
+  .screenbody::-webkit-scrollbar-thumb{background:#4b6d8f;border-radius:4px}
+
+  /* Vent cameras & Dust check: keep fixed-height visual panels unclipped */
+  .screenbody.tab-external,.screenbody.tab-systems{display:flex!important;flex-direction:column;gap:7px;overflow:hidden!important}
+  .screenbody.tab-external .vent-cams,.screenbody.tab-systems .vent-cams{flex:none;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+  .screenbody.tab-systems .vent-cams{grid-template-columns:repeat(7,minmax(0,1fr))}
+  .vent-cams .bezel-ch-btn{font-size:13px!important;padding:5px 2px!important}
+  .screenbody.tab-external .vfeed{flex:1 1 0;min-height:0;aspect-ratio:auto!important}
+  .screenbody.tab-external .vfeed svg{position:absolute;inset:0;width:100%;height:100%}
+  .screenbody.tab-external .vdead{flex:1 1 0;min-height:0}
+
+  /* Dust check: heading + text + graph that fills the remaining space */
+  .screenbody.tab-systems .feed.wide{flex:1 1 0;min-height:0;display:flex;flex-direction:column;padding:8px 12px!important}
+  .screenbody.tab-systems .feed.wide h4{flex:none;margin:0 0 3px}
+  .screenbody.tab-systems .feed.wide p{flex:none;margin:0!important;font-size:14px!important;line-height:1.35!important}
+  .screenbody.tab-systems .feed.wide svg{flex:1 1 0;min-height:0;width:100%;margin-top:4px!important}
+
+  /* Status / signal screens: let each card expand to its full text height and scroll the main panel */
+  .screenbody.tab-overview,.screenbody.tab-radio{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    grid-auto-rows:max-content!important;
+    align-content:start;
+    gap:9px;
+  }
+  .screenbody.tab-overview .feed,.screenbody.tab-radio .feed{
+    overflow:visible!important;
+    height:auto!important;
+    min-height:0;
+    padding:10px 12px!important;
+  }
+
+  /* Action buttons: one tidy row */
+  .screen-actions.tab-external>div,.screen-actions.tab-systems>div{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px!important;width:100%}
+  .screen-actions.tab-external .bezel-ch-btn,.screen-actions.tab-systems .bezel-ch-btn{font-size:12.5px!important;padding:6px 2px!important;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="briefing">
+  <div class="gate-card">
+    <div class="gate-kicker">OUTPOST ZERO · COMMAND DESK-01</div>
+    <h2>WE LOST CONTACT WITH EARTH</h2>
+    <p>It is Mars Day 412. A huge dust storm has cut off contact with Earth and your team outside. You are in charge of Outpost Zero. Keep the base running for five days and send a rescue signal. Check the vent cameras for smoke. Use the dust monitor to find areas with unsafe air. The monitor uses battery while it is on, so switch it off when you are done.</p>
+    <div class="diff-label">CHOOSE GAME MODE</div>
+    <div class="diff-row mode-row" id="modeRow">
+      <button type="button" class="diff-btn mode-btn active" data-mode="standard"><b>STANDARD MISSION</b><small>Original Outpost Zero gameplay, unchanged.</small></button>
+      <button type="button" class="diff-btn mode-btn" data-mode="live"><b>🛰️ NASA LIVE MISSION</b><small>NASA solar and Mars-weather data can trigger additional mission events.</small></button>
+    </div>
+    <p class="diff-note" id="modeNote">Standard mode: the original five-day mission.</p>
+    <div id="liveSetup" hidden>
+      <label class="commander-label" for="nasaKeyInput">NASA API KEY (OPTIONAL)</label>
+      <input id="nasaKeyInput" class="commander-input" type="password" autocomplete="off" placeholder="Uses NASA DEMO_KEY if left blank">
+      <p class="commander-help">A personal api.nasa.gov key provides higher request limits. The key is used in this browser session and is not saved by the game.</p>
+      <p class="commander-help">Live Mode checks NASA DONKI solar events and the latest accessible Curiosity REMS weather report. If a live feed is unavailable, that event type is not fabricated.</p>
+    </div>
+    <div class="diff-label">CHOOSE DIFFICULTY</div>
+    <div class="diff-row" id="diffRow">
+      <button type="button" class="diff-btn active" data-diff="normal"><b>NORMAL</b><small>The standard mission.</small></button>
+      <button type="button" class="diff-btn" data-diff="hard"><b>🔥 HARD MODE</b><small>More leaks, faster dust, and the camera can break!</small></button>
+    </div>
+    <p class="diff-note" id="diffNote"></p>
+    <label class="commander-label" for="commanderNameInput">YOUR NAME, COMMANDER</label>
+    <input id="commanderNameInput" class="commander-input" type="text" maxlength="20" autocomplete="nickname" placeholder="Enter your name" aria-describedby="commanderNameHelp">
+    <p id="commanderNameHelp" class="commander-help">Your name will appear in the game.</p>
+    <div class="gate-rules">
+      <strong>YOUR JOB</strong><br>
+      • Check the vent cameras. Look for smoke, then fix the broken vent.<br>
+      • Check the dust monitor. Find dusty areas and seal them.<br>
+      • Save battery. Fixing things and using the dust monitor take power.<br>
+      • On Day 5, keep at least <strong>12% battery</strong> and send your rescue signal. If the battery runs out, the base will shut down.
+    </div>
+    <button class="start-btn" id="startBtn">START MISSION</button>
+  </div>
+</div>
+
+<header class="floating-top-hud">
+  <div class="hud-brand">
+    <div class="hud-brand-icon">🚀</div>
+    <div>
+      <h1>MARS: OUTPOST ZERO</h1>
+      <span id="commanderDisplay">COMMANDER: —</span>
+    </div>
+  </div>
+
+  <div class="hud-meters">
+    <div class="f-meter"><div class="f-meter-head"><span>⚡ POWER</span><b id="powerNum">68%</b></div><div class="f-bar blue"><span id="powerBar" style="width:68%"></span></div></div>
+    <div class="f-meter"><div class="f-meter-head"><span>🫁 AIR</span><b id="oxyNum">100%</b></div><div class="f-bar"><span id="oxyBar" style="width:100%"></span></div></div>
+    <div class="f-meter"><div class="f-meter-head"><span>❤️ HEALTH</span><b id="healthNum">100%</b></div><div class="f-bar red"><span id="healthBar" style="width:100%"></span></div></div>
+  </div>
+
+  <div class="hud-controls">
+    <div class="hud-clock">
+      <b id="clock">DAY 1 · 00:00</b>
+      <small id="dayPill">STANDBY</small>
+    </div>
+    <button class="hud-mini-btn" id="muteBtn" title="Toggle mechanical sound effects">🔊 SFX</button>
+    <button class="hud-mini-btn" id="restart" title="Restart mission">↻</button>
+  </div>
+</header>
+
+<aside class="float-side float-right" id="rightDrawer">
+  <div class="float-head">
+    <h3>🎓 HELP &amp; INFO</h3>
+    <span style="font:800 10px/1 monospace;color:var(--amber)" id="scorePill">SCORE: 100</span>
+    <button class="collapse-btn" data-toggle="rightDrawer">−</button>
+  </div>
+  <div class="float-body">
+    <div class="hint-box" id="hintText">A hint tells you what to check. Each hint costs 2 points.</div>
+    <div class="side-btn-row">
+      <button class="hud-mini-btn" id="hintBtn">💡 GET A HINT · −2</button>
+    </div>
+  </div>
+</aside>
+
+<div class="fnaf-stage" id="fnafStage">
+  <div class="room-world" id="roomWorld">
+
+    <div class="bunker-wall">
+      <div class="ceiling-light"></div>
+
+      <!-- Armored Left Viewport with CCTV Security Monitor Mode -->
+      <div class="mars-viewport" id="marsViewport">
+        <div class="viewport-stencil">WINDOW · MARS OUTSIDE</div>
+        <div class="mars-sun"></div>
+        <div class="mars-dunes"></div>
+        <div class="dust-storm-layer" id="dustHaze"></div>
+
+        <!-- CCTV Security Monitor CRT Filter & Scanlines Overlay -->
+        <div class="cctv-overlay" id="cctvOverlay">
+          <div class="cctv-header">
+            <span id="cctvCamTitle">CAM-01 · MARS SURFACE</span>
+            <span class="cctv-rec">REC [LIVE]</span>
+          </div>
+          <div class="cctv-body" id="cctvBodyText">
+            SURFACE LINK ON. SCANNING DUST HORIZON AND IRRADIATED TERRAIN...
+          </div>
+          <div style="display:flex;justify-content:space-between;font:700 9px/1 monospace;color:#4ad68a;position:relative;z-index:7;">
+            <span>FPS: 29.97 · SYNC OK</span>
+            <span>SEC-FEED 01</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wall-conduits">
+        <div class="hazard-trim"></div>
+        <div class="pipe-bar"></div>
+        <div class="pipe-bar" style="width:78%"></div>
+        <div class="pipe-bar"></div>
+        <div class="hazard-trim"></div>
+      </div>
+    </div>
+
+    <div class="desk-assembly">
+      <div class="desk-surface"></div>
+      <div class="desk-prop-mug" title="Commander's coffee mug"></div>
+
+      <div class="desk-hardware-rig">
+
+        <!-- High-Contrast Clear CRT Telemetry Terminal -->
+        <section class="crt-unit" aria-label="High-Contrast CRT Telemetry Terminal">
+          <div class="crt-top-bezel">
+            <span>OUTPOST ZERO · MAIN MONITOR</span>
+            <span>4 SCREENS</span>
+          </div>
+
+          <div class="crt-glass">
+            <div class="crt-header">
+              <b id="screenTitle">BASE STATUS</b>
+              <span class="crt-live-tag">LIVE</span>
+            </div>
+
+            <div class="screenbody" id="screenBody"></div>
+            <div class="screen-actions" id="screenActions"></div>
+          </div>
+
+          <!-- Expanded Tactile Bezel Channel Switch Buttons -->
+          <div class="crt-channel-bar" id="monitorTabs">
+            <button class="bezel-ch-btn active" data-tab="overview">1 · STATUS</button>
+            <button class="bezel-ch-btn" data-tab="external">2 · VENT CAMERAS</button>
+            <button class="bezel-ch-btn" data-tab="systems">3 · DUST CHECK</button>
+            <button class="bezel-ch-btn" data-tab="radio">4 · SEND SIGNAL</button>
+          </div>
+        </section>
+
+        <!-- Expanded Tactile Aerospace Switchboard -->
+        <section class="switchboard-unit" aria-label="Tactile Aerospace Switchboard">
+          <div class="sb-header">
+            <span>CONTROL PANEL</span>
+            <span>BUS-A/B</span>
+          </div>
+
+          <div class="annunciator-strip">
+            <div class="annun-lamp ok" id="lampPower">POWER</div>
+            <div class="annun-lamp ok" id="lampAir">AIR</div>
+            <div class="annun-lamp ok" id="lampRad">DUST</div>
+            <div class="annun-lamp warn" id="lampEarth">MON</div>
+          </div>
+
+          <div class="toggles-row">
+            <div class="toggle-module" id="shedToggle" role="switch" aria-checked="false" tabindex="0">
+              <div class="toggle-label">POWER SAVE</div>
+              <div class="switch-assembly">
+                <div class="switch-well">
+                  <div class="hex-nut"><div class="hex-collar"></div></div>
+                </div>
+                <div class="bat-lever"></div>
+              </div>
+              <div class="toggle-state-pill">
+                <span class="toggle-led amber"></span>
+                <span id="shedStateText">OFF</span>
+              </div>
+            </div>
+
+            <div class="toggle-module" id="shelterToggle" role="switch" aria-checked="false" tabindex="0">
+              <div class="toggle-label">DUST CHECK</div>
+              <div class="switch-assembly">
+                <div class="safety-guard" title="Safety flip cover"></div>
+                <div class="switch-well">
+                  <div class="hex-nut"><div class="hex-collar"></div></div>
+                </div>
+                <div class="bat-lever"></div>
+              </div>
+              <div class="toggle-state-pill">
+                <span class="toggle-led green"></span>
+                <span id="shelterStateText">OFF</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="push-grid">
+            <button class="aero-btn" id="repairBtn">
+              <span>🫁 CHECK VENTS</span>
+              <small id="airBtnSub">SCREEN 2 · FIX COST: 7%</small>
+            </button>
+
+            <button class="aero-btn" id="dustBtn">
+              <span>🌫️ DUST CHECK</span>
+              <small>SCREEN 3 · SEAL COST: 6%</small>
+            </button>
+
+            <button class="aero-btn" id="radiationBarrierBtn" hidden>
+              <span id="radiationBarrierLabel">☢️ ACTIVATE RADIATION BARRIER</span>
+              <small id="radiationBarrierSub">SOLAR PARTICLE EVENT · PROTECT CREW</small>
+            </button>
+            <button class="aero-btn" id="repairPanelsBtn" hidden>
+              <span>🔌 REPAIR SOLAR PANELS</span>
+              <small>COLOUR-CONNECT THE MATCHING WIRES</small>
+            </button>
+
+            <button class="aero-btn hazard-btn" id="radioBtn">
+              <span id="radioBtnLabel">📡 RESCUE SIGNAL · DAY 5</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="wire-overlay" id="wireOverlay">
+  <div class="wire-card">
+    <div class="wire-head"><b>🔌 CAMERA REPAIR · WIRE LINK</b><button class="wire-x" id="wireClose">✕ CLOSE</button></div>
+    <p class="wire-info" id="wireInfo"></p>
+    <div class="wire-status" id="wireStatus"></div>
+    <svg id="wireSvg" viewBox="0 0 360 200" aria-label="Wire matching game"></svg>
+    <span class="wire-note" id="wireNote"></span>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="dust-veil" id="dustVeil"></div>
+<div class="modal" id="modal">
+  <div class="modalcard">
+    <h2 id="modalTitle">System message</h2>
+    <p id="modalText"></p>
+    <button class="start-btn" id="modalOk" style="padding:10px">OK, GOT IT</button>
+  </div>
+</div>
+
+<div class="end" id="end">
+  <div class="endcard">
+    <div class="big" id="endIcon">🛰️</div>
+    <div class="gate-kicker" id="endKicker">MISSION ENDED</div>
+    <h2 id="endTitle">Mission complete</h2>
+    <p id="endText"></p>
+    <div class="endstats">
+      <span id="endScore">Score: 0</span>
+      <span id="endHints">Hints: 0</span>
+      <span id="endDay">Day 5</span>
+    </div>
+    <button class="start-btn" id="playAgain">PLAY AGAIN</button>
+    <button class="start-btn" id="playOther" style="margin-top:8px;background:transparent;border:2px solid var(--amber);color:#ffe299"></button>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+let audioCtx=null,sfxMuted=false;
+function playClick(type='toggle'){
+  if(sfxMuted)return;
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const now=audioCtx.currentTime;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    if(type==='toggle'){
+      osc.type='triangle';
+      osc.frequency.setValueAtTime(240,now);
+      osc.frequency.exponentialRampToValueAtTime(75,now+0.055);
+      gain.gain.setValueAtTime(0.24,now);
+      gain.gain.exponentialRampToValueAtTime(0.001,now+0.06);
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.start(now);osc.stop(now+0.065);
+    }else if(type==='button'){
+      osc.type='sine';
+      osc.frequency.setValueAtTime(440,now);
+      osc.frequency.exponentialRampToValueAtTime(160,now+0.045);
+      gain.gain.setValueAtTime(0.16,now);
+      gain.gain.exponentialRampToValueAtTime(0.001,now+0.05);
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.start(now);osc.stop(now+0.055);
+    }else if(type==='alert'){
+      osc.type='sawtooth';
+      osc.frequency.setValueAtTime(150,now);
+      osc.frequency.linearRampToValueAtTime(110,now+0.18);
+      gain.gain.setValueAtTime(0.12,now);
+      gain.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.start(now);osc.stop(now+0.21);
+    }
+  }catch(e){}
+}
+
+document.addEventListener('mousemove',(e)=>{
+  const nx=(e.clientX/window.innerWidth)-0.5;
+  const ny=(e.clientY/window.innerHeight)-0.5;
+  const panX=Math.round(-nx*44)+'px';
+  const panY=Math.round(-ny*20)+'px';
+  document.documentElement.style.setProperty('--pan-x',panX);
+  document.documentElement.style.setProperty('--pan-y',panY);
+});
+
+const VENTS=[
+ {n:'AIRLOCK A',f:'<rect x="140" y="44" width="40" height="42"/><path d="M140 54h40M140 64h40" stroke-dasharray="4 4"/>'},
+ {n:'HYDROPONICS',f:'<circle cx="136" cy="72" r="9"/><circle cx="160" cy="66" r="12"/><circle cx="186" cy="72" r="9"/>'},
+ {n:'CREW BUNKS',f:'<rect x="128" y="44" width="30" height="16"/><rect x="128" y="64" width="30" height="16"/><rect x="168" y="50" width="22" height="36"/>'},
+ {n:'REACTOR BAY',f:'<circle cx="160" cy="62" r="17"/><circle cx="160" cy="62" r="7" fill="#7a8"/>'},
+ {n:'COMMS HUB',f:'<path d="M138 84L160 48L182 84" fill="none"/><circle cx="160" cy="45" r="3" fill="#7a8"/>'},
+ {n:'MEDBAY',f:'<path d="M160 48v28M146 62h28" stroke-width="5"/>'},
+ {n:'WATER RECYCLER',f:'<rect x="140" y="46" width="40" height="38" rx="6"/><path d="M140 62h40"/>'},
+ {n:'ROVER GARAGE',f:'<rect x="132" y="58" width="56" height="22" rx="4"/><circle cx="144" cy="82" r="5"/><circle cx="176" cy="82" r="5"/>'}
+];
+const DA=[9,10,11,12,13,14,15];
+const DN=['W SOLAR YARD','N GATE','DRILL SHAFT','ROVER RAMP','S VENT STACK','COMMS MAST','E CARGO DOOR'];
+const GRACE=2,DGRACE=3,FIX=7,BAR=6,MONRATE=1.5,SAFE_P=70,DANG_P=50;
+const fixCost=()=>hardMode?7:5, barrierCost=()=>hardMode?6:4, monitorRate=()=>hardMode?1.5:1.2;
+const COL=["#5ce1f6","#5ef29b","#ffbe55","#b6a0ff","#ff7ac8","#f2f27a","#ff9a62"];
+const STORY=[,
+ 'Sol 412. "The storm cut off the outside team and the link to Earth. Eight vents, one battery, and a lot to do."',
+ 'Sol 413. "The sky turned orange this morning. Dust gets through tiny gaps. The monitor helps me find it."',
+ 'Sol 414. "The storms are lasting longer. I switch the monitor on, check the numbers, then switch it off to save battery."',
+ 'Sol 415. "The seals keep failing in the same places. I need to keep checking them."',
+ 'Sol 416. "This is my last chance. I need one emergency signal and 12% battery. I must keep the air safe."'
+];
+let hardMode=false,pickedHard=false;
+let liveMode=false,pickedLive=false,liveRefresh=null,wirePurpose='camera',nasaApiKey='DEMO_KEY';
+const base=()=>82+Math.floor(Math.random()*13);
+const initial=()=>({started:false,day:1,hour:0,totalHours:0,power:68,oxygen:100,health:100,powerSave:false,monitor:false,
+ vents:VENTS.map(()=>({age:-1,rep:0})),camVent:0,nextVentHour:hardMode?4:2,camBroken:false,camFixes:0,camSafeUntil:0,camBreaks:0,wire:null,wireWrong:0,airRepairCount:0,wrongFixes:0,
+ dust:DA.map(()=>({lvl:base(),breach:-1,bar:false})),roomDust:0,storm:false,plan:null,nextBreach:0,hist:[],monUsed:0,monArea:0,barCount:0,wrongBars:0,dustHit:false,
+ hints:0,score:100,radioSent:false,ended:false,painful:false,activeMonitor:'overview',
+ liveMode, nasaStatus:'NOT CONNECTED', nasaCheckedAt:null, nasaWeather:null, nasaSolar:[], liveQueue:[], seenNASAIds:[],
+ radiationActive:false,radiationElapsed:0,radiationEndsAt:0,radiationBarrier:false,activeSolarLabel:'',
+ panelBroken:false,panelFixes:0,radLabRate:null});
+let s=initial(),timer=null,sec=null;
+let commanderName='Commander';
+const leaking=()=>s.vents.filter(v=>v.age>=0);
+const draining=()=>s.vents.filter(v=>v.age>=GRACE);
+const breached=()=>s.dust.filter(d=>d.breach>=0);
+let toastT;const notice=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500);};
+const clamp=()=>['power','oxygen','health'].forEach(k=>s[k]=Math.max(0,Math.min(100,s[k])));
+const modal=(t,x)=>{$('modalTitle').textContent=t;$('modalText').textContent=x;$('modal').classList.add('show');};
+const setAnnun=(id,st)=>{$(id).className='annun-lamp '+st;};
+
+function planStorm(){
+  if(liveMode)return;
+  const d=s.day;if(d<1)return;
+  // Hard Mode now teaches the systems before introducing major weather pressure.
+  const hardStormChance=[0,0,.35,.65,.85,.95];
+  if(hardMode&&Math.random()>=hardStormChance[d])return;
+  if(!hardMode&&d>2&&Math.random()>=[0,0,1,.6,.7,.8][d])return;
+  const normalDur=[0,4,6,8,9,11][d];
+  const hardDur=[0,0,4,6,8,10][d];
+  const dur=hardMode?hardDur[d]:normalDur;
+  const lead=hardMode?4:2;
+  const st=s.totalHours+lead+Math.floor(Math.random()*(19-dur));
+  s.plan={start:st,end:st+dur};
+}
+
+function spawnVents(){
+  if(s.totalHours<s.nextVentHour)return;
+  const d=s.day;
+  const free=s.vents.map((v,i)=>i).filter(i=>s.vents[i].age<0);
+  const maxActive=(hardMode?[0,1,2,3,4,5]:[0,1,2,3,4,4])[d];
+  const slots=Math.min(maxActive-leaking().length,free.length);
+  if(slots>0){
+    // On Day 5, a vent event can damage two different vents at once.
+    // The total number of active leaks is capped at four for fair play.
+    const count=d===5
+      ? (Math.random()<(hardMode?0.85:0.58)?Math.min(2,slots):1)
+      : (hardMode&&d===4&&Math.random()<0.5?Math.min(2,slots):1);
+    const pool=free.slice();
+    for(let n=0;n<count&&n<slots;n++){
+      const weights=pool.map(i=>1+s.vents[i].rep*0.4*d);
+      let r=Math.random()*weights.reduce((a,b)=>a+b,0),k=0;
+      while(k<pool.length-1&&r>weights[k]){r-=weights[k];k++;}
+      s.vents[pool[k]].age=0;
+      pool.splice(k,1);
+    }
+  }
+  // The final day has shorter gaps between possible vent failures.
+  const hardGaps=[0,5,4,3,2,1];
+  const gap=hardMode?hardGaps[d]:(d===5?2:d===4?3:[0,5,4,3,3][d]);
+  const jitter=hardMode?(d<=2?2:2):(d===5?1:d===4?2:[0,2,2,2,2][d]);
+  s.nextVentHour=s.totalHours+gap+Math.floor(Math.random()*jitter);
+}
+
+function dustStep(){
+  const p=s.plan,t=s.totalHours;
+  if(p&&!s.storm&&t>=p.start){s.storm=true;s.nextBreach=t;;}
+  if(s.storm&&t>=p.end){s.storm=false;s.plan=null;s.dust.forEach(d=>{d.breach=-1;d.bar=false;});;}
+  if(s.storm&&t>=s.nextBreach){
+    const open=s.dust.map((d,i)=>i).filter(i=>s.dust[i].breach<0&&!s.dust[i].bar);
+    if(breached().length<(hardMode?[0,0,1,2,3,4]:[0,1,2,2,3,3])[s.day]&&open.length)s.dust[open[Math.floor(Math.random()*open.length)]].breach=0;
+    s.nextBreach=t+(hardMode?[0,0,4,3,2,1]:[0,4,3,3,2,2])[s.day]+Math.floor(Math.random()*2);
+  }
+  s.dust.forEach(d=>{if(d.breach>=0){d.breach++;d.lvl=Math.max(0,d.lvl-(hardMode?38:35));}else d.lvl=base()-(s.storm?10:0);});
+  // HARD MODE: dust gets into the room after 2 hours (not 3) and fills it faster.
+  const over=s.dust.filter(d=>d.breach>=(hardMode?3:DGRACE)).length;
+  if(over){s.roomDust=Math.min(100,s.roomDust+(hardMode?26:24)*over);}
+  else s.roomDust=Math.max(0,s.roomDust-(hardMode?10:10));
+  s.hist.push(s.dust.map(d=>d.lvl));
+}
+
+function tick(){
+  if(!s.started||s.ended)return;
+  s.totalHours++;
+  if(liveMode)processLiveEvents();
+  s.vents.forEach(v=>{if(v.age>=0){v.age++;}});
+  // Track electricity as a net balance: base use is offset by solar generation,
+  // then dust-storm conditions reduce the solar energy reaching the panels.
+  const basePowerUse=s.powerSave?0.35:0.65;
+  const solarGain=s.storm?(hardMode?0.5:0.8):(hardMode?1.6:1.9);
+  const stormSolarLoss=s.storm?(hardMode?0.45:0.35):0;
+  const netPowerChange=(liveMode&&s.panelBroken?-0.9:solarGain-basePowerUse-stormSolarLoss);
+  s.power=Math.max(0,Math.min(85,s.power+netPowerChange));
+  if(!s.powerSave)s.oxygen-=0.28;
+  draining().forEach(v=>{
+    // Each overdue vent removes oxygen every in-game hour.
+    // Day 5 is more dangerous, and older leaks become worse over time.
+    const overdue=Math.max(0,v.age-GRACE);
+    const hardDrain=[0,1.5,2.1,2.8,3.5,4.0];
+    const baseDrain=hardMode?hardDrain[s.day]:(s.day===5?4.2:(s.day===4?3.6:2.8));
+    const extraDrain=s.day===5?Math.min(1.8,overdue*0.55):Math.min(1.0,overdue*0.3);
+    s.oxygen-=baseDrain+extraDrain;
+  });
+  if(s.roomDust>0){s.oxygen-=s.roomDust*(hardMode?0.06:0.045);s.dustHit=true;}
+  if(s.oxygen<1)s.oxygen=0;
+  // Health drops below 50% air, and drops faster as air gets lower.
+  if(s.oxygen<50)s.health-=(50-s.oxygen)*0.16;
+  if(s.oxygen<=0)s.health-=10;
+  if(liveMode&&s.radiationActive){
+    s.radiationElapsed++;
+    if(!s.radiationBarrier)s.health-=Math.min(7,1.1+s.radiationElapsed*0.55);
+    if(s.totalHours>=s.radiationEndsAt){
+      s.radiationActive=false;s.radiationBarrier=false;
+      notice('SOLAR PARTICLE EVENT ENDED · radiation levels returning to baseline');
+    }
+  }
+  const lowestAir=Math.min(...s.dust.map(d=>d.lvl));
+  if(lowestAir<50)s.health-=(50-lowestAir)*0.035;
+  s.hour++;
+  if(s.hour>=24){
+    s.hour=0;s.day++;
+    if(s.day>5){endGame(s.radioSent?'rescued':'stranded');return;}
+    ;;planStorm();
+  }
+  spawnVents();dustStep();cameraStep();
+  render();if(checkEnd())return;
+  if(s.day===5&&s.hour===23&&!s.radioSent){if(s.power<12)beginPainfulEnding();else endGame('stranded');}
+}
+// ---------- HARD MODE: camera malfunction ----------
+// Chance per in-game hour that the vent cameras break. Very high on the last 2 days.
+const CAMP=[0,0,.01,.04,.12,.20];
+function cameraStep(){
+  if(!hardMode||s.camBroken||s.totalHours<s.camSafeUntil)return;
+  if(Math.random()<CAMP[Math.min(5,s.day)]){
+    s.camBroken=true;s.camBreaks++;
+    playClick('alert');
+    notice('⚠ CAMERA MALFUNCTION · open VENT CAMERAS to repair it');
+    if(s.camBreaks===1)modal('Camera malfunction!','The vent cameras just broke, so you cannot see smoke now. Open VENT CAMERAS and press REPAIR CAMERA. Connect each wire tip to the tip with the SAME colour. The base keeps running while you repair!');
+  }
+}
+
+// ---------- HARD MODE: wire matching game ----------
+const WCOL=[['red','#ff5263'],['orange','#ff9a3c'],['yellow','#f2e65a'],['green','#5ef29b'],['cyan','#5ce1f6'],['blue','#4a7dff'],['violet','#b6a0ff'],['pink','#ff7ac8']];
+const WRH=46,WLX=46,WRX=314;
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const wireY=i=>14+i*WRH+WRH/2-7;
+function newWire(){
+  const f=s.camFixes+(s.panelFixes||0),n=Math.min(8,3+f);          // more wires after every repair
+  const cols=shuf(WCOL.map((_,i)=>i)).slice(0,n);
+  const left=f>=2?shuf(cols):cols.slice();        // from repair 3 both sides are mixed up
+  let right=shuf(cols),tries=0;
+  while(n>1&&tries++<20&&right.every((c,i)=>c===left[i]))right=shuf(cols);
+  s.wire={left,right,done:{},sel:null,drag:false,flash:null,finished:false};
+}
+function openWire(){
+  if(!s.started||s.ended||!((hardMode&&s.camBroken)||(liveMode&&s.panelBroken)))return;
+  wirePurpose=(liveMode&&s.panelBroken)?'panels':'camera';
+  if(!s.wire)newWire();
+  $('wireOverlay').classList.add('show');
+  renderWire();
+}
+function openPanelWire(){
+  if(!s.started||s.ended||!liveMode||!s.panelBroken)return;
+  wirePurpose='panels';
+  if(!s.wire)newWire();
+  $('wireOverlay').classList.add('show');
+  renderWire();
+}
+function closeWire(){const o=$('wireOverlay');if(o)o.classList.remove('show');}
+function wirePath(x1,y1,x2,y2,c,dash){
+  const dx=(x2-x1)*.5,d=`M${x1} ${y1}C${x1+dx} ${y1} ${x2-dx} ${y2} ${x2} ${y2}`;
+  return `<path d="${d}" fill="none" stroke="#04080d" stroke-width="10" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="5.5" stroke-linecap="round"${dash?' stroke-dasharray="7 6"':''}/>`;
+}
+function renderWire(){
+  const w=s.wire;if(!w)return;
+  const n=w.left.length,H=n*WRH+14,doneR=new Set(Object.values(w.done));
+  let g='';
+  Object.entries(w.done).forEach(([l,r])=>{g+=wirePath(WLX,wireY(+l),WRX,wireY(r),WCOL[w.left[l]][1]);});
+  if(w.flash)g+=wirePath(WLX,wireY(w.flash.l),WRX,wireY(w.flash.r),'#ff5263',true);
+  g+='<path id="wireTemp" d="" fill="none" stroke-width="5.5" stroke-linecap="round" opacity=".85"/>';
+  w.left.forEach((c,i)=>{
+    const done=w.done[i]!==undefined,sel=w.sel===i,col=WCOL[c][1],y=wireY(i);
+    g+=`<g data-side="L" data-i="${i}" style="cursor:${done?'default':'pointer'}"><rect x="${WLX-40}" y="${y-7}" width="34" height="14" rx="3" fill="#2a3a4a"/><circle cx="${WLX}" cy="${y}" r="${sel?15:13}" fill="${col}" stroke="${sel?'#fff':'#0a1118'}" stroke-width="${sel?4:3}"/>${done?`<circle cx="${WLX}" cy="${y}" r="4" fill="#0a1118"/>`:''}<circle cx="${WLX}" cy="${y}" r="21" fill="transparent"/><title>${WCOL[c][0]} wire</title></g>`;
+  });
+  w.right.forEach((c,i)=>{
+    const done=doneR.has(i),col=WCOL[c][1],y=wireY(i);
+    g+=`<g data-side="R" data-i="${i}" style="cursor:${done?'default':'pointer'}"><rect x="${WRX+6}" y="${y-7}" width="34" height="14" rx="3" fill="#2a3a4a"/><circle cx="${WRX}" cy="${y}" r="13" fill="${col}" stroke="#0a1118" stroke-width="3"/>${done?`<circle cx="${WRX}" cy="${y}" r="4" fill="#0a1118"/>`:''}<circle cx="${WRX}" cy="${y}" r="21" fill="transparent"/><title>${WCOL[c][0]} wire</title></g>`;
+  });
+  const svg=$('wireSvg');
+  svg.setAttribute('viewBox',`0 0 360 ${H}`);
+  svg.innerHTML=g;
+  const lvl=s.camFixes+1,got=Object.keys(w.done).length;
+  const repairName=wirePurpose==='panels'?'SOLAR PANEL REPAIR':'CAMERA REPAIR';
+  $('wireInfo').innerHTML=`${repairName} · Repair <em>#${lvl}</em> · <em>${got}/${n}</em> wires linked. Drag from a wire tip on the left to the tip with the <em>same colour</em> on the right. (Or tap one tip, then tap the other.)`;
+  $('wireNote').innerHTML=w.finished?'<span class="wire-ok">✔ ALL WIRES LINKED · CAMERA REBOOTING…</span>':
+    (s.camFixes>=4?'⚡ Short-circuit danger: a wrong link wipes ALL your links!':'A wrong link costs 1 point.')+' The base keeps running while you repair, so work fast!';
+  updateWireStatus();
+}
+function updateWireStatus(){
+  const e=$('wireStatus');if(!e||!s)return;
+  e.textContent=`DAY ${s.day} · ${String(s.hour).padStart(2,'0')}:00  ·  ⚡ ${Math.round(s.power)}%  ·  🫁 AIR ${Math.round(s.oxygen)}%  ·  ❤️ ${Math.round(s.health)}%`;
+}
+function wirePt(e){
+  const svg=$('wireSvg'),r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+  return [(e.clientX-r.left)*vb.width/r.width,(e.clientY-r.top)*vb.height/r.height];
+}
+function drawTemp(e){
+  const w=s.wire;if(!w||w.sel===null||w.finished)return;
+  const t=$('wireTemp');if(!t)return;
+  const [px,py]=wirePt(e),x1=WLX,y1=wireY(w.sel),dx=(px-x1)*.5;
+  t.setAttribute('d',`M${x1} ${y1}C${x1+dx} ${y1} ${px-dx} ${py} ${px} ${py}`);
+  t.setAttribute('stroke',WCOL[w.left[w.sel]][1]);
+}
+function wireAttempt(l,r){
+  const w=s.wire;if(!w||w.finished)return;
+  if(w.left[l]===w.right[r]){
+    w.done[l]=r;w.sel=null;playClick('toggle');
+    if(Object.keys(w.done).length===w.left.length){w.finished=true;renderWire();setTimeout(()=>finishWire(w),650);return;}
+    renderWire();
+  }else{
+    s.wireWrong++;s.score=Math.max(0,s.score-1);playClick('alert');
+    w.sel=null;w.flash={l,r};
+    if(s.camFixes>=4){w.done={};notice('⚡ SHORT CIRCUIT! All links wiped.');}
+    renderWire();
+    setTimeout(()=>{if(s.wire===w&&w.flash){w.flash=null;renderWire();}},450);
+  }
+}
+function finishWire(w){
+  if(s.wire!==w||s.ended)return;
+  if(wirePurpose==='panels'){
+    s.panelBroken=false;s.panelFixes++;s.score+=8;
+    closeWire();s.wire=null;notice('✔ SOLAR ARRAY ONLINE · panel output restored');playClick('toggle');
+  }else{
+    s.camBroken=false;s.camFixes++;s.camSafeUntil=s.totalHours+(s.day>=4?2:3);s.score+=6;s.wire=null;
+    closeWire();notice('✔ CAMERA ONLINE · vent cameras are working again');playClick('toggle');
+  }
+  render();
+}
+(function wireInput(){
+  const svg=$('wireSvg');
+  svg.addEventListener('pointerdown',e=>{
+    const w=s.wire;if(!w||w.finished)return;
+    const t=e.target.closest&&e.target.closest('[data-side]');if(!t)return;
+    const side=t.dataset.side,i=+t.dataset.i;
+    e.preventDefault();
+    if(side==='L'){
+      if(w.done[i]!==undefined)return;
+      w.sel=i;w.drag=true;
+      try{svg.setPointerCapture(e.pointerId);}catch(_){}
+      renderWire();drawTemp(e);playClick('button');
+    }else if(w.sel!==null&&!Object.values(w.done).includes(i)){
+      wireAttempt(w.sel,i);
+    }
+  });
+  svg.addEventListener('pointermove',e=>{if(s.wire&&s.wire.sel!==null)drawTemp(e);});
+  svg.addEventListener('pointerup',e=>{
+    const w=s.wire;if(!w||!w.drag)return;
+    w.drag=false;
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const t=el&&el.closest?el.closest('[data-side="R"]'):null;
+    if(t&&w.sel!==null){const i=+t.dataset.i;if(!Object.values(w.done).includes(i))wireAttempt(w.sel,i);}
+  });
+  $('wireClose').onclick=()=>{playClick('button');closeWire();};
+})();
+
+function advance(n=1){for(let i=0;i<n;i++){tick();if(s.ended)break;}render();}
+
+
+function beginPainfulEnding(){
+  if(s.ended||s.painful)return;
+  s.painful=true;
+  s.monitor=false;
+  s.roomDust=100;
+  s.oxygen=Math.min(s.oxygen,48);
+  s.dust.forEach(d=>{d.lvl=Math.min(d.lvl,50);d.breach=Math.max(0,d.breach);});
+  $('fnafStage').style.filter='blur(8px)';
+  $('dustVeil').style.opacity='0.95';
+  notice('CRITICAL AIR FAILURE · SYSTEMS LOST');
+  render();
+}
+
+function endGame(t){
+  if(s.ended)return;s.ended=true;clearInterval(timer);clearInterval(sec);clearInterval(liveRefresh);closeWire();
+  const d={
+    suffocation:['🫁','SUFFOCATION','There was not enough air to keep the base safe. The mission ended.'],
+    dust:['🌫️','BURIED IN DUST','Too much dust got into the room before you sealed the area. The mission ended.'],
+    health:['🚨','COMMANDER DOWN','Too many problems happened at once. You could not keep the base running.'],
+    power:['🔋','BLACKOUT','The battery reached zero. The base lost power and the mission ended.'],
+    rescued:['🛟','SURVIVED · RESCUE CONFIRMED',`${commanderName}, you made it through all five days and sent the rescue signal. Help is on the way. You survived!`],
+    stranded:['🌞','RESCUE MISSED','Day 5 ended before you sent the rescue signal. The base is still waiting for help.'],
+    painful:['🌫️','PAINFUL ENDING · AIR FAILURE','There was not enough power to send the rescue signal. Dust filled the room and the air became unsafe. The mission ended.']
+  }[t];
+  $('endIcon').textContent=d[0];$('endKicker').textContent='MISSION ENDED';$('endTitle').textContent=d[1];$('endText').textContent=d[2].replaceAll('Commander',commanderName);
+  $('endScore').textContent='Score: '+Math.max(0,s.score)+' / 100';$('endHints').textContent='Hints used: '+s.hints;$('endDay').textContent='Day '+Math.min(5,s.day)+(hardMode?' · HARD':'');
+  $('playOther').textContent=liveMode?'↩ SWITCH TO STANDARD MODE':(hardMode?'🙂 SWITCH TO NORMAL MODE':'🔥 TRY HARD MODE');
+  $('end').classList.add('show');
+}
+function checkEnd(){
+  if(s.health<=0){endGame(s.painful?'painful':'suffocation');return true;}
+  if(s.power<=0){endGame('power');return true;}
+  return false;
+}
+
+function hud(){
+  clamp();
+  [['power','powerNum','powerBar'],['oxygen','oxyNum','oxyBar'],['health','healthNum','healthBar']].forEach(([k,n,b])=>{$(n).textContent=(k==='power'&&s.monitor?s[k].toFixed(1):Math.round(s[k]))+'%';$(b).style.width=s[k]+'%';});
+}
+function render(){
+  clamp();
+  hud();
+  $('clock').textContent=`DAY ${s.day} · ${String(s.hour).padStart(2,'0')}:00`;
+  $('dayPill').textContent=s.started?`DAY ${s.day} OF 5${liveMode?' · LIVE':hardMode?' · HARD':''}`:'STANDBY';
+  $('scorePill').textContent=`SCORE: ${Math.max(0,s.score)}`;
+  $('dustHaze').classList.toggle('active',s.storm);
+  $('fnafStage').classList.toggle('alarm-active',s.power<18||s.oxygen<22||s.roomDust>20);
+  $('fnafStage').classList.toggle('lights-off',!!s.powerSave);
+  $('fnafStage').style.filter=s.painful?'blur(8px)':(s.roomDust>0?`blur(${(s.roomDust/100*4).toFixed(1)}px)`:'' );
+  $('dustVeil').style.opacity=(s.roomDust/100*0.75).toFixed(2);
+  // Hard Mode keeps the physical annunciator lamps neutral so they do not
+  // reveal problems to the player; the underlying systems still behave normally.
+  setAnnun('lampPower',hardMode?'ok':(s.power<15?'bad':s.power<26?'warn':'ok'));
+  setAnnun('lampAir',hardMode?'ok':(s.oxygen<18?'bad':(s.oxygen<30||draining().length)?'warn':'ok'));
+  setAnnun('lampRad',hardMode?'ok':(s.roomDust>20?'bad':s.roomDust>0?'warn':'ok'));
+  setAnnun('lampEarth',hardMode?'ok':(s.monitor?'ok':'warn'));
+  if($('wireOverlay').classList.contains('show'))updateWireStatus();
+  $('shedToggle').classList.toggle('on',s.powerSave);$('shedToggle').setAttribute('aria-checked',String(s.powerSave));$('shedStateText').textContent=s.powerSave?'ON':'OFF';
+  $('shelterToggle').classList.toggle('on',s.monitor);$('shelterToggle').setAttribute('aria-checked',String(s.monitor));$('shelterStateText').textContent=s.monitor?'ON':'OFF';
+  $('radioBtn').classList.toggle('ready-tx',s.day>=5&&!s.radioSent&&s.power>=12);
+  $('radioBtnLabel').textContent=s.radioSent?'📡 RESCUE SIGNAL SENT':(s.day>=5?'📡 SEND RESCUE CALL · −12 POWER':'📡 RESCUE SIGNAL · DAY 5');
+  $('radiationBarrierBtn').hidden=!(liveMode&&s.radiationActive);
+  $('radiationBarrierLabel').textContent=s.radiationBarrier?'🛡️ RADIATION BARRIER ACTIVE':'☢️ ACTIVATE RADIATION BARRIER';
+  $('radiationBarrierSub').textContent=s.radiationBarrier?'CREW SHIELDING ENGAGED':'HEALTH LOSS INCREASES WHILE EXPOSED';
+  $('radiationBarrierBtn').classList.toggle('fault-ready',liveMode&&s.radiationActive&&!s.radiationBarrier);
+  $('repairPanelsBtn').hidden=!(liveMode&&s.panelBroken);
+  renderMonitorContent(s.activeMonitor);
+}
+
+function deadCamPanel(){
+  return `<div class="vdead"><div class="vstatic"></div><div class="vscan"></div><div class="vdead-in"><b>⚠ CAMERA MALFUNCTION</b><span>No picture. You cannot see smoke until the vent cameras are repaired.</span><button class="wire-open" data-wire="1">🔌 REPAIR CAMERA · WIRE LINK #${s.camFixes+1}</button></div></div>`;
+}
+function ventPanel(){
+  if(hardMode&&s.camBroken)return deadCamPanel();
+  const i=s.camVent,v=s.vents[i],smoke=v.age>=0,heavy=v.age>=GRACE;
+  const cams=VENTS.map((x,k)=>`<button class="bezel-ch-btn${k===i?' active':''}" data-cam="${k}">CAM ${k+1}</button>`).join('');
+  const flip=i%2?' transform="translate(320 0) scale(-1 1)"':'';
+  const Rc=u=>({l:115*u,t:34*u,r:320-115*u,b:120-34*u});
+  const ribs=[.16,.34,.5,.63,.74,.83,.9].map(u=>{const c=Rc(u),w=2.6*(1-u)+.5,d=`M${c.l.toFixed(1)} ${c.t.toFixed(1)}H${c.r.toFixed(1)}V${c.b.toFixed(1)}H${c.l.toFixed(1)}Z`;
+    return `<path d="${d}" fill="none" stroke="#040906" stroke-width="${w.toFixed(2)}"/><path d="${d}" fill="none" stroke="#6a967f" stroke-width="${(w*.32).toFixed(2)}" transform="translate(0 -.5)" opacity=".7"/>`;}).join('');
+  const grate=[.12,.26,.4,.54,.68,.82].map(f=>`<line x1="${(320*f).toFixed(1)}" y1="120" x2="${(115+90*f).toFixed(1)}" y2="86"/>`).join('');
+  const seamL=[.3,.55,.8].map(f=>`<line x1="0" y1="${(120*f).toFixed(1)}" x2="115" y2="${(34+52*f).toFixed(1)}"/>`).join('');
+  const seamR=[.3,.55,.8].map(f=>`<line x1="320" y1="${(120*f).toFixed(1)}" x2="205" y2="${(34+52*f).toFixed(1)}"/>`).join('');
+  const cable=[.3,.7].map(g=>`<line x1="${(320*g).toFixed(1)}" y1="0" x2="${(115+90*g).toFixed(1)}" y2="34"/>`).join('');
+  const pf=.06+((i*37)%5)*.015;
+  const pipe=`<polygon points="0,${(120*pf).toFixed(1)} 115,${(34+52*pf).toFixed(1)} 115,${(34+52*(pf+.09)).toFixed(1)} 0,${(120*(pf+.09)).toFixed(1)}" fill="#14251c" stroke="#040806" stroke-width=".6"/><line x1="0" y1="${(120*(pf+.03)).toFixed(1)}" x2="115" y2="${(34+52*(pf+.03)).toFixed(1)}" stroke="#7fb097" stroke-width=".9" opacity=".55"/>`;
+  const hh=String(s.hour).padStart(2,'0');
+  const puffs=[[45,58,7,0],[58,54,9,0],[70,57,6,0],[52,60,8,.4],[64,52,7,1.2],[40,56,6,2]].map(([cx,cy,r,dl])=>`<circle cx="${cx}" cy="${cy}" r="${r}"${dl?` style="animation-delay:${dl}s"`:''}/>`).join('');
+  return `<div class="vent-cams">${cams}</div>
+  <div class="vfeed${s.storm?' storm':''}"><div class="vtag"><i class="vdot">●</i> CAM ${i+1} · ${VENTS[i].n}</div><div class="vstatic"></div><div class="vscan"></div><div class="vroll"></div><div class="vir">IR · NIGHT</div><div class="vts">DAY ${s.day} · ${hh}:00</div>
+  <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice" aria-label="Vent corridor camera ${i+1}">
+   <defs>
+    <radialGradient id="vg" cx="50%" cy="50%" r="60%"><stop offset="35%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".92"/></radialGradient>
+    <radialGradient id="vglow" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#d8ffe8" stop-opacity=".30"/><stop offset="60%" stop-color="#d8ffe8" stop-opacity=".06"/><stop offset="100%" stop-color="#d8ffe8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="vfar" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="#5f8f78" stop-opacity=".45"/><stop offset="100%" stop-color="#0a140e" stop-opacity="0"/></radialGradient>
+    <radialGradient id="vhazeg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e4ede8" stop-opacity=".55"/><stop offset="100%" stop-color="#e4ede8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="vwallL" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#0a130e"/><stop offset="100%" stop-color="#2a4636"/></linearGradient>
+    <linearGradient id="vwallR" x1="1" x2="0" y1="0" y2="0"><stop offset="0%" stop-color="#09110c"/><stop offset="100%" stop-color="#243e30"/></linearGradient>
+    <linearGradient id="vfloor" x1="0" x2="0" y1="1" y2="0"><stop offset="0%" stop-color="#0c1711"/><stop offset="100%" stop-color="#2f4d3c"/></linearGradient>
+    <linearGradient id="vceil" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#050a07"/><stop offset="100%" stop-color="#1b2f23"/></linearGradient>
+    <filter id="vblur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="vgrain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"><animate attributeName="seed" values="1;5;2;8;3;6" dur=".5s" repeatCount="indefinite" calcMode="discrete"/></feTurbulence><feColorMatrix values=".33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1"/></filter>
+    <filter id="vgrime" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".02 .07" numOctaves="3" seed="${i+3}"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.9 -.65"/></filter>
+   </defs>
+   <rect width="320" height="120" fill="#0b120e"/>
+   <polygon points="0,0 115,34 115,86 0,120" fill="url(#vwallL)"/><polygon points="320,0 205,34 205,86 320,120" fill="url(#vwallR)"/>
+   <polygon points="0,0 320,0 205,34 115,34" fill="url(#vceil)"/><polygon points="0,120 320,120 205,86 115,86" fill="url(#vfloor)"/>
+   <rect width="320" height="120" filter="url(#vgrime)" opacity=".5"/>
+   <g stroke="#0a140f" stroke-width=".9" opacity=".9">${seamL}${seamR}${cable}</g>
+   <g stroke="#3d5f4b" stroke-width=".7" opacity=".55">${grate}</g>
+   ${pipe}
+   ${ribs}
+   <rect x="115" y="34" width="90" height="52" fill="#050a07" stroke="#2c4638"/>
+   <rect x="115" y="34" width="90" height="52" fill="url(#vfar)"/>
+   <g fill="#1d3a2b" stroke="#3f6a52">${VENTS[i].f}</g>
+   <g${flip}>
+    <polygon points="26,37 84,46 84,69 26,81" fill="#101b15" stroke="#5b8a70" stroke-width="2"/>
+    <polygon points="30,40 80,48 80,66 30,78" fill="#050d08"/>
+    <g stroke="#3c6450" stroke-width="2.4"><line x1="30" y1="49.5" x2="80" y2="52.5"/><line x1="30" y1="59" x2="80" y2="57"/><line x1="30" y1="68.5" x2="80" y2="61.5"/></g>
+    <g stroke="#a6d3b9" stroke-width=".6" opacity=".55"><line x1="30" y1="48.6" x2="80" y2="51.6"/><line x1="30" y1="58.1" x2="80" y2="56.1"/><line x1="30" y1="67.6" x2="80" y2="60.6"/></g>
+    <g fill="#9cc3ae"><circle cx="28" cy="39" r="1.3"/><circle cx="82" cy="47.5" r="1.3"/><circle cx="82" cy="67.5" r="1.3"/><circle cx="28" cy="79" r="1.3"/></g>
+    <circle class="vled${smoke?' bad':''}" cx="22" cy="59" r="1.8"/>
+    ${smoke?`<line x1="54" y1="79" x2="52" y2="96" stroke="#030705" stroke-width="1.2" opacity=".6"/>`:''}
+    ${smoke?`<g class="vsmoke${heavy?' heavy':''}" filter="url(#vblur)">${puffs}</g>`:''}
+    ${heavy?`<ellipse class="vhaze" cx="95" cy="58" rx="95" ry="36" fill="url(#vhazeg)"/>`:''}
+   </g>
+   <rect width="320" height="120" fill="url(#vglow)"/>
+   <rect width="320" height="120" filter="url(#vgrain)" opacity=".17" style="mix-blend-mode:overlay"/>
+   <rect width="320" height="120" fill="url(#vg)"/>
+  </svg></div>`;
+}
+
+function dustGraph(k,W=560,H=200){
+  const L=42,R=10,T=10,B=26,pw=W-L-R,ph=H-T-B,N=120;
+  const X=i=>L+i*pw/N,Y=v=>T+ph*(1-v/100),tx='font-size="12" font-weight="700" fill="#c9dcf0"';
+  let g='';
+  [0,25,75,100].forEach(v=>{g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2a3f55" stroke-width=".6"/><text x="${L-4}" y="${Y(v)+3}" text-anchor="end" ${tx}>${v}%</text>`;});
+  g+=`<line x1="${L}" x2="${W-R}" y1="${Y(SAFE_P)}" y2="${Y(SAFE_P)}" stroke="#5ef29b" stroke-width=".8" stroke-dasharray="2 3"/><text x="${L-4}" y="${Y(SAFE_P)+3}" text-anchor="end" font-size="12" font-weight="700" fill="#5ef29b">70%</text>`;
+  g+=`<line x1="${L}" x2="${W-R}" y1="${Y(DANG_P)}" y2="${Y(DANG_P)}" stroke="#ff5263" stroke-width="1.2" stroke-dasharray="5 3"/><text x="${L-4}" y="${Y(DANG_P)+3}" text-anchor="end" font-size="12" font-weight="700" fill="#ff7a89">50%</text><text x="${L+6}" y="${Y(DANG_P)+14}" font-size="12" font-weight="700" fill="#ff9aa6">UNSAFE BELOW 50%</text>`;
+  for(let d=0;d<=5;d++){g+=`<line x1="${X(24*d)}" x2="${X(24*d)}" y1="${T}" y2="${T+ph}" stroke="#3a526a" stroke-width=".7"/>`;if(d<5)g+=`<text x="${X(24*d+12)}" y="${H-7}" text-anchor="middle" ${tx}>DAY ${d+1}</text>`;}
+  [k].forEach(k=>{
+    const pts=s.hist.map((h,i)=>X(i).toFixed(1)+','+Y(h[k]).toFixed(1)).join(' ');
+    const n=s.hist.length-1;
+    g+=`<polyline fill="none" stroke="${COL[k]}" stroke-width="2.4" stroke-linejoin="round" points="${pts}"/><circle cx="${X(n).toFixed(1)}" cy="${Y(s.hist[n][k]).toFixed(1)}" r="2.6" fill="${COL[k]}"/>`;
+  });
+  return g;
+}
+
+function dustPanel(){
+  if(!s.monitor)return `<div class="feed wide"><h4>DUST CHECK OFF</h4><p>Switch it on to check the air level in areas 9–15. It uses ${monitorRate()}% battery every real-time second while it stays on.</p></div>`;
+  const k=s.monArea,btns=DA.map((a,i)=>`<button class="bezel-ch-btn${i===k?' active':''}" data-marea="${i}">AREA ${a}</button>`).join('');
+  return `<div class="vent-cams">${btns}</div>
+  <div class="feed wide"><h4 style="color:${COL[k]}">AREA ${DA[k]} · ${DN[k]}${s.dust[k].bar?' · BARRIER UP':''} · AIR LEVEL · DAY 1 UNTIL NOW</h4>
+  <p>Below <b style="color:#ff9aa6">${DANG_P}%</b> is unsafe. A safe level is above ${SAFE_P}%. Battery use: −${monitorRate()}% per second · used this time: <b id="monUsed">${s.monUsed.toFixed(1)}</b>%</p>
+  <svg id="dustSvg" viewBox="0 0 560 200" style="width:100%;display:block;margin-top:6px" aria-label="Air purity history graph for area ${DA[k]}">${dustGraph(k)}</svg></div>`;
+}
+
+function renderMonitorContent(which){
+  const prevTab=s.activeMonitor;
+  const prevScroll=prevTab===which?$('screenBody').scrollTop:0;
+  s.activeMonitor=which;
+  const cctv=which==='external';
+  $('marsViewport').classList.toggle('cctv-active',cctv);
+  if(cctv){
+    const v=s.vents[s.camVent];
+    $('cctvCamTitle').textContent=`CAM ${s.camVent+1} · ${VENTS[s.camVent].n}`;
+    $('cctvBodyText').textContent=(hardMode&&s.camBroken)?'SIGNAL LOST · CAMERA OFFLINE. REPAIR THE WIRING.':v.age>=0?(s.storm?'The storm is blocking this camera.':'Smoke spotted near this vent!'):'No smoke seen. This vent looks clear.';
+  }
+  $('screenTitle').textContent={overview:'1 · BASE STATUS',external:'2 · VENT CAMERAS',systems:'3 · DUST CHECK & BARRIERS',radio:'4 · RESCUE SIGNAL'}[which]||'1 · BASE STATUS';
+  document.querySelectorAll('#monitorTabs .bezel-ch-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===which));
+  let html='';
+  if(which==='external')html=ventPanel();
+  else if(which==='systems')html=dustPanel();
+  else if(which==='radio')html=[
+    ['RESCUE SIGNAL','Your message is ready. Send it to ask Earth for help.'],
+    ['POWER NEEDED',`You need 12% battery. You have ${Math.round(s.power)}%. You can send this message once.`],
+    ['SEND TIME',`Day ${s.day} of 5 · ${String(s.hour).padStart(2,'0')}:00. Send it before Day 5 ends.`]
+  ].map(c=>`<div class="feed"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+  else {
+    const overviewCards=[
+      ['BASE STATUS',`Battery ${Math.round(s.power)}% · Oxygen ${Math.round(s.oxygen)}% · Health ${Math.round(s.health)}%`],
+      ['COMMANDER’S LOG',STORY[s.day]],
+      ['REPAIR HISTORY',`Vent fixes: ${s.airRepairCount} (wrong ${s.wrongFixes}) · Barriers: ${s.barCount} (wrong ${s.wrongBars}). Repaired vents leak again more often on later days.${hardMode?` Camera repairs: ${s.camFixes}.`:''}`],
+      ['BASE SETTINGS',`Day ${s.day} of 5 (${String(s.hour).padStart(2,'0')}:00) · POWER SAVE ${s.powerSave?'ON':'OFF'} · DUST CHECK ${s.monitor?'ON':'OFF'} · BEACON ${s.radioSent?'SENT':s.day>=5?'READY':'NOT READY'}${hardMode?` · MODE HARD · CAMERA ${s.camBroken?'BROKEN':'OK'}`:''}`]
+    ];
+    if(liveMode){
+      const w=s.nasaWeather;
+      overviewCards.push(['NASA LIVE DATA',`Connection: ${s.nasaStatus}. Last check: ${s.nasaCheckedAt||'not yet checked'}. ${w?`Curiosity REMS latest report · Sol ${w.sol||'—'} · ${w.temp!==null?`temperature ${w.temp}°C · `:''}${w.wind!==null?`wind ${w.wind} m/s · `:''}${w.pressure!==null?`pressure ${w.pressure} Pa`:''}`:'No current Mars weather observation was retrieved.'}`]);
+      overviewCards.push(['SOLAR / CREW SAFETY',s.radiationActive?`⚠ ${s.activeSolarLabel}. Radiation barrier ${s.radiationBarrier?'ACTIVE':'INACTIVE'}. ${s.radiationBarrier?'Crew shielding is engaged.':'Health loss increases as exposure continues.'}`:`Solar event: none active. Solar panels ${s.panelBroken?'MALFUNCTIONING':'operational'}.`]);
+      overviewCards.push(['RADIATION REFERENCE',s.radLabRate!==null?`Latest accessible RadLab ISS absorbed-dose-rate sample: ${s.radLabRate} μGy/hour. This is an Earth-orbit reference measurement, not a Mars reading and is not used as a direct Mars dose value.`:'RadLab ISS dosimetry reference unavailable. RadLab data are not direct Mars measurements.']);
+      overviewCards.push(['DATA LIMITS','DONKI events are near-Earth space-weather observations used as mission-risk indicators, not direct Mars dosimeters. REMS weather is the latest downlinked rover report, not an instantaneous global Mars forecast. High wind is only a dust-lift risk proxy.']);
+    }
+    html=overviewCards.map(c=>`<div class="feed${liveMode&&(['NASA LIVE DATA','SOLAR / CREW SAFETY'].includes(c[0]))?' wide':''}"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+    if(liveMode)html+=`<div class="feed wide"><h4>NASA DATA SOURCES</h4><p>DONKI · Curiosity REMS · RadLab dosimetry reference · Marshall solar-cycle forecast</p><div class="live-source-links"><a href="https://api.nasa.gov/" target="_blank" rel="noopener">NASA DONKI</a><a href="https://mars.nasa.gov/msl/mission/weather/" target="_blank" rel="noopener">Mars weather</a><a href="https://visualization.osdr.nasa.gov/radlab/" target="_blank" rel="noopener">RadLab</a><a href="https://www.nasa.gov/solar-cycle-progression-and-forecast/" target="_blank" rel="noopener">Solar forecast</a></div></div>`;
+  }
+  $('screenBody').innerHTML=html;
+  $('screenBody').className='screenbody tab-'+which;
+  $('screenBody').scrollTop=prevScroll;
+  fitDustGraph();
+  const st='style="border-color:var(--amber);color:#ffe299"';
+  let act='<span class="action-note">Check the vent cameras for smoke. Use the dust check to find unsafe air.</span>';
+  if(which==='external')act=`<span class="action-note">${(hardMode&&s.camBroken)?'🔌 CAMERA OFFLINE · repair it to see smoke · a blind fix':'FIX A LEAK'} · −${fixCost()} POWER, a wrong choice still costs battery</span><div style="display:flex;gap:5px;flex-wrap:wrap">${VENTS.map((v,i)=>`<button class="bezel-ch-btn" data-fix="${i}" ${st}>FIX ${i+1}</button>`).join('')}</div>`;
+  if(which==='systems')act=`<span class="action-note">SEAL DUST AREA · −${barrierCost()} POWER, a wrong choice still costs battery</span><div style="display:flex;gap:5px;flex-wrap:wrap"><button class="bezel-ch-btn${s.monitor?' active':''}" id="monBtn">${s.monitor?'TURN OFF':'TURN ON'}</button>${DA.map((a,i)=>`<button class="bezel-ch-btn" data-bar="${i}" ${st}>SEAL ${a}</button>`).join('')}</div>`;
+  if(which==='radio')act=`<span class="action-note">Transmitter armed.</span><div style="display:flex;gap:7px"><button class="bezel-ch-btn" id="cancelRadioTab">BACK</button><button class="bezel-ch-btn active" id="transmitNow" style="border-color:var(--red);color:#ffb0b9">SEND SIGNAL · 12% POWER</button></div>`;
+  $('screenActions').innerHTML=act;
+  $('screenActions').className='screen-actions tab-'+which;
+  document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>{playClick('button');s.camVent=+b.dataset.cam;renderMonitorContent('external');});
+  document.querySelectorAll('[data-fix]').forEach(b=>b.onclick=()=>{playClick('button');fixVent(+b.dataset.fix);});
+  document.querySelectorAll('[data-bar]').forEach(b=>b.onclick=()=>{playClick('button');setBarrier(+b.dataset.bar);});
+  document.querySelectorAll('[data-marea]').forEach(b=>b.onclick=()=>{playClick('button');s.monArea=+b.dataset.marea;renderMonitorContent('systems');});
+  if($('monBtn'))$('monBtn').onclick=toggleMonitor;
+  if($('cancelRadioTab'))$('cancelRadioTab').onclick=()=>{playClick('button');renderMonitorContent('overview');};
+  if($('transmitNow'))$('transmitNow').onclick=transmit;
+  document.querySelectorAll('[data-wire]').forEach(b=>b.onclick=()=>{playClick('button');openWire();});
+}
+
+function fitDustGraph(){
+  const sv=$('dustSvg');if(!sv||!s.monitor)return;
+  const r=sv.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height);
+  if(w<120||h<60)return;
+  sv.setAttribute('viewBox','0 0 '+w+' '+h);
+  sv.innerHTML=dustGraph(s.monArea,w,h);
+}
+window.addEventListener('resize',()=>{if(s&&s.activeMonitor==='systems')renderMonitorContent('systems');});
+
+function fixVent(i){
+  if(!s.started||s.ended)return;
+  if(s.power<fixCost()){modal('Not enough battery',`Fixing a vent needs ${fixCost()}% battery. Turn on POWER SAVE or wait for the solar panels.`);return;}
+  const v=s.vents[i];s.power-=fixCost();
+  if(v.age>=0){
+    if(v.age>=GRACE)s.oxygen=Math.min(100,s.oxygen+8);
+    v.age=-1;v.rep++;s.airRepairCount++;s.score+=8;notice(`Vent ${i+1} (${VENTS[i].n}) fixed.`);playClick('toggle');
+  }else{s.wrongFixes++;s.score-=3;notice(`Vent ${i+1} was not leaking. ${fixCost()}% power wasted.`);playClick('alert');}
+  advance(1);
+}
+function setBarrier(i){
+  if(!s.started||s.ended)return;
+  if(s.power<barrierCost()){modal('Not enough battery',`Sealing an area needs ${barrierCost()}% battery. Turn on POWER SAVE or wait for the solar panels.`);return;}
+  const d=s.dust[i];s.power-=barrierCost();
+  if(d.breach>=0){d.breach=-1;d.bar=true;d.lvl=base();s.barCount++;s.score+=8;notice(`Seal for Area ${DA[i]} fixed. Dust held back.`);playClick('toggle');}
+  else{s.wrongBars++;s.score-=3;notice(`Area ${DA[i]} was safe. ${barrierCost()}% power wasted.`);playClick('alert');}
+  advance(1);
+}
+function toggleMonitor(){
+  if(!s.started||s.ended)return;
+  playClick('toggle');
+  s.monitor=!s.monitor;
+  if(s.monitor)s.monUsed=0;
+  if(s.monitor)s.activeMonitor='systems';
+  render();
+}
+
+function openBeacon(){
+  if(!s.started)return;playClick('button');
+  if(s.radioSent){modal('Distress already sent','Your emergency signal has already been sent. Stay safe until Day 5 ends.');return;}
+  if(s.day<5){modal('Emergency transmitter','You can send the emergency signal on Day 5.');return;}
+  if(s.power<12){beginPainfulEnding();return;}
+  renderMonitorContent('radio');
+}
+function transmit(){
+  playClick('toggle');
+  if(s.power<12){modal('Signal not sent','Battery fell below the 12% radio minimum.');return;}
+  s.power-=12;s.radioSent=true;s.score+=15;
+  renderMonitorContent('overview');render();
+  if(s.day===5&&s.hour>=20)endGame('rescued');
+  else modal('Signal sent!','Your emergency signal has been sent. Keep the base running until Day 5 ends.');
+}
+function useHint(){
+  playClick('button');s.hints++;s.score=Math.max(0,s.score-2);
+  const msg=(liveMode&&s.radiationActive&&!s.radiationBarrier)?'SOLAR RADIATION ALERT: activate the RADIATION BARRIER immediately. Health loss increases while exposure continues.':
+    (liveMode&&s.panelBroken)?'SOLAR PANEL SIGNAL FAULT: press REPAIR SOLAR PANELS and connect matching colours in the wire puzzle.':
+    (hardMode&&s.camBroken)?'The vent camera is broken! Open VENT CAMERAS and press REPAIR CAMERA. Connect each wire tip to the tip with the same colour. The base keeps running while you work!':draining().length?'A vent may be leaking. Open VENT CAMERAS, check each camera for smoke, then choose FIX on the smoky vent.':
+    s.roomDust>0?'Dust may be getting inside. Open DUST CHECK, turn it on, and look through each area. Seal an area if its air level drops below 50%.':
+    s.storm?'A dust storm is active. Open DUST CHECK and look through every area. If its air level falls below 50%, seal that area.':
+    s.day===5&&!s.radioSent?'FINAL DAY: keep at least 12% battery, open SEND SIGNAL, then press SEND.':
+    'Check every vent camera for smoke. Use the dust monitor briefly because it uses battery while switched on.';
+  $('hintText').textContent=msg+' (−2 pts)';;render();
+}
+
+
+// ---------- NASA LIVE MISSION DATA ----------
+const nasaDate=d=>d.toISOString().slice(0,10);
+function findNumericDeep(obj,keys){
+  if(!obj||typeof obj!=='object')return null;
+  for(const [k,v] of Object.entries(obj)){
+    if(keys.some(x=>k.toLowerCase().replace(/[^a-z]/g,'').includes(x))&&typeof v==='number'&&Number.isFinite(v))return v;
+    if(v&&typeof v==='object'){const n=findNumericDeep(v,keys);if(n!==null)return n;}
+  }
+  return null;
+}
+function findTextDeep(obj,keys){
+  if(!obj||typeof obj!=='object')return null;
+  for(const [k,v] of Object.entries(obj)){
+    if(keys.some(x=>k.toLowerCase().replace(/[^a-z]/g,'').includes(x))&&(typeof v==='string'||typeof v==='number'))return String(v);
+    if(v&&typeof v==='object'){const n=findTextDeep(v,keys);if(n!==null)return n;}
+  }
+  return null;
+}
+async function getJSON(url){
+  const r=await fetch(url,{cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function fetchLiveNASA(){
+  if(!liveMode||!s.started||s.ended)return;
+  s.nasaStatus='CHECKING NASA FEEDS';
+  if(s.activeMonitor==='overview')renderMonitorContent('overview');
+  const now=new Date(),from=new Date(now.getTime()-7*86400000),key=encodeURIComponent(nasaApiKey||'DEMO_KEY');
+  const baseURL='https://api.nasa.gov/DONKI/';
+  const weatherURL='https://mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json';
+  const requests=await Promise.allSettled([
+    getJSON(`${baseURL}SEP?startDate=${nasaDate(from)}&endDate=${nasaDate(now)}&api_key=${key}`),
+    getJSON(`${baseURL}CME?startDate=${nasaDate(from)}&endDate=${nasaDate(now)}&api_key=${key}`),
+    getJSON(`${baseURL}FLR?startDate=${nasaDate(from)}&endDate=${nasaDate(now)}&api_key=${key}`),
+    getJSON(weatherURL),
+    getJSON(`https://visualization.osdr.nasa.gov/radlab/api/?spacecraft=ISS&timestamp%3E=${nasaDate(from)}&absorbed_dose_rate&format=json`)
+  ]);
+  const sep=requests[0].status==='fulfilled'&&Array.isArray(requests[0].value)?requests[0].value:[];
+  const cme=requests[1].status==='fulfilled'&&Array.isArray(requests[1].value)?requests[1].value:[];
+  const flr=requests[2].status==='fulfilled'&&Array.isArray(requests[2].value)?requests[2].value:[];
+  const weatherRaw=requests[3].status==='fulfilled'?requests[3].value:null;
+  const radRaw=requests[4].status==='fulfilled'?requests[4].value:null;
+  s.radLabRate=radRaw?findNumericDeep(radRaw,['absorbeddoserate']):null;
+  const weather=weatherRaw?{
+    sol:findTextDeep(weatherRaw,['sol']),
+    temp:findNumericDeep(weatherRaw,['avtemp','airtemperature','temperature']),
+    wind:findNumericDeep(weatherRaw,['windspeed','horizontalwindspeed','hws']),
+    pressure:findNumericDeep(weatherRaw,['pressure','preav'])
+  }:null;
+  s.nasaWeather=weather&&(weather.temp!==null||weather.wind!==null||weather.pressure!==null)?weather:null;
+  s.nasaCheckedAt=new Date().toLocaleString();
+  s.nasaStatus=(requests[0].status==='fulfilled'||requests[1].status==='fulfilled')?'DONKI CONNECTED':'DONKI UNAVAILABLE';
+  const addEvent=(type,id,label,source)=>{
+    id=String(id||type+'-'+label);
+    if(s.seenNASAIds.includes(id))return;
+    s.seenNASAIds.push(id);
+    const triggerAt=s.totalHours+4+Math.floor(Math.random()*12);
+    s.liveQueue.push({type,id,label,source,triggerAt});
+  };
+  const recentSEP=sep.filter(e=>e.eventTime||e.startTime).sort((a,b)=>String(b.eventTime||b.startTime).localeCompare(String(a.eventTime||a.startTime)));
+  const recentCME=cme.filter(e=>e.startTime).sort((a,b)=>String(b.startTime).localeCompare(String(a.startTime)));
+  const strongFlare=flr.filter(e=>/^[MX]/i.test(String(e.classType||''))).sort((a,b)=>String(b.beginTime||'').localeCompare(String(a.beginTime||'')));
+  if(recentSEP.length){
+    const e=recentSEP[0];addEvent('radiation',e.link||e.eventTime||e.startTime,`Solar energetic particle event · ${e.eventTime||e.startTime}`,'NASA DONKI SEP');
+  }
+  if(recentCME.length){
+    const e=recentCME[0];addEvent('signal',e.link||e.startTime,`Coronal mass ejection · ${e.startTime}`,'NASA DONKI CME');
+  }else if(strongFlare.length){
+    const e=strongFlare[0];addEvent('signal',e.link||e.flrID||e.beginTime,`Strong ${e.classType} solar flare · ${e.beginTime||'recent observation'}`,'NASA DONKI FLR');
+  }
+  if(s.nasaWeather&&s.nasaWeather.wind!==null){
+    // High wind is used only as a dust-lift risk proxy, not as an official storm alert.
+    if(s.nasaWeather.wind>=12&&!s.liveQueue.some(e=>e.type==='dust')){
+      s.liveQueue.push({type:'dust',id:'REMS-'+(s.nasaWeather.sol||s.nasaCheckedAt),label:`High-wind dust-lift risk · REMS ${s.nasaWeather.wind} m/s`,source:'NASA Curiosity REMS',triggerAt:s.totalHours+2+Math.floor(Math.random()*6)});
+    }
+  }
+  if(s.activeMonitor==='overview')renderMonitorContent('overview');
+  notice('NASA LIVE DATA · '+s.nasaStatus);
+}
+function processLiveEvents(){
+  if(!liveMode)return;
+  const ready=s.liveQueue.filter(e=>s.totalHours>=e.triggerAt);
+  if(!ready.length)return;
+  s.liveQueue=s.liveQueue.filter(e=>s.totalHours<e.triggerAt);
+  ready.forEach(e=>{
+    if(e.type==='radiation'&&!s.radiationActive){
+      s.radiationActive=true;s.radiationElapsed=0;s.radiationEndsAt=s.totalHours+6;s.radiationBarrier=false;s.activeSolarLabel=e.label;
+      playClick('alert');notice('☢️ SOLAR PARTICLE EVENT · ACTIVATE RADIATION BARRIER');
+      modal('SOLAR RADIATION ALERT',`${e.label}. Source: ${e.source}. Activate the RADIATION BARRIER on the control panel. Crew health decreases while the barrier is off, and the loss increases with exposure time. This is a simplified training simulation, not a real Mars dose forecast.`);
+    }else if(e.type==='signal'&&!s.panelBroken){
+      s.panelBroken=true;playClick('alert');notice('⚡ SOLAR SIGNAL DISTURBANCE · SOLAR PANELS OFFLINE');
+      modal('SOLAR PANEL SIGNAL FAULT',`${e.label}. Source: ${e.source}. The solar-array control link has malfunctioned in this training scenario. Press REPAIR SOLAR PANELS and connect each wire tip to the tip with the same colour. Panel power generation is reduced until repaired.`);
+    }else if(e.type==='dust'&&!s.storm){
+      const dur=5+Math.floor(Math.random()*4),start=s.totalHours+1;
+      s.plan={start,end:start+dur};
+      notice('🌫️ MARS HIGH-WIND DUST EVENT · NASA REMS WIND OBSERVATION');
+      modal('MARS WEATHER EVENT',`${e.label}. Source: ${e.source}. The latest rover weather observation indicates elevated wind, used here as a dust-lift risk proxy. A simulated dust event is approaching. Check the dust monitor and seal affected areas. The weather report is a downlinked rover observation, not a global real-time storm alert.`);
+    }
+  });
+}
+
+function startMission(){
+  const field=$('commanderNameInput');
+  const entered=(field?.value||'').trim().replace(/\s+/g,' ').slice(0,20);
+  if(!entered){
+    field?.focus();
+    modal('Enter your name','Please type your name before starting the mission.');
+    return;
+  }
+  hardMode=pickedHard;
+  liveMode=pickedLive;
+  nasaApiKey=(($('nasaKeyInput')?.value||'').trim()||'DEMO_KEY');
+  commanderName=entered;
+  $('commanderDisplay').textContent='COMMANDER: '+commanderName;
+  reset();
+}
+function reset(){
+  closeWire();
+  playClick('toggle');clearInterval(timer);clearInterval(sec);clearInterval(liveRefresh);$('briefing').classList.add('hidden');
+  s=initial();s.hist=[s.dust.map(d=>d.lvl)];$('end').classList.remove('show');
+  $('hintText').textContent='A hint tells you what to check. Each hint costs 2 points.';
+  s.started=true;planStorm();
+  render();
+  timer=setInterval(()=>{if(s.started&&!s.ended)tick();},6000);
+  if(liveMode){
+    fetchLiveNASA();
+    liveRefresh=setInterval(()=>{if(s.started&&!s.ended)fetchLiveNASA();},60*60*1000);
+  }
+  // The dust detector drains power once per real-time second while switched on.
+  sec=setInterval(()=>{
+    if(!s.started||s.ended)return;
+    if(s.painful){
+      s.oxygen=Math.max(0,s.oxygen-8);
+      s.health=Math.max(0,s.health-7);
+      render();
+      checkEnd();
+      return;
+    }
+    if(!s.monitor)return;
+    s.power-=monitorRate();
+    s.monUsed+=monitorRate();
+    clamp();
+    render();
+    checkEnd();
+  },1000);
+}
+
+document.querySelectorAll('#monitorTabs .bezel-ch-btn').forEach(b=>b.addEventListener('click',()=>{playClick('button');b.dataset.tab==='radio'?openBeacon():renderMonitorContent(b.dataset.tab);}));
+const handleShed=()=>{
+  if(!s.started)return;playClick('toggle');
+  if(!s.powerSave){s.powerSave=true;s.score+=3;;}
+  else{if(s.power<15){modal('Battery too low','Keep POWER SAVE engaged while the battery is below 15%.');return;}s.powerSave=false;;}
+  advance(1);
+};
+$('shedToggle').addEventListener('click',handleShed);
+$('shedToggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handleShed();}});
+$('shelterToggle').addEventListener('click',toggleMonitor);
+$('shelterToggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleMonitor();}});
+$('repairBtn').onclick=()=>{if(!s.started)return;playClick('button');renderMonitorContent('external');};
+$('dustBtn').onclick=()=>{if(!s.started)return;playClick('button');renderMonitorContent('systems');};
+$('radiationBarrierBtn').onclick=()=>{
+  if(!s.started||!liveMode||!s.radiationActive)return;
+  s.radiationBarrier=!s.radiationBarrier;playClick('toggle');
+  notice(s.radiationBarrier?'RADIATION BARRIER ACTIVE · crew shielded':'RADIATION BARRIER DISABLED');
+  render();
+};
+$('repairPanelsBtn').onclick=()=>{if(!s.started||!s.panelBroken)return;playClick('button');openPanelWire();};
+$('hintBtn').onclick=useHint;
+$('radioBtn').onclick=openBeacon;
+$('muteBtn').onclick=()=>{sfxMuted=!sfxMuted;$('muteBtn').textContent=sfxMuted?'🔇 MUTE':'🔊 SFX';if(!sfxMuted)playClick('button');};
+$('modalOk').onclick=()=>{playClick('button');$('modal').classList.remove('show');};
+$('restart').onclick=reset;$('playAgain').onclick=reset;
+$('playOther').onclick=()=>{
+  if(liveMode){liveMode=false;pickedLive=false;document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('active',x.dataset.mode==='standard'));$('liveSetup').hidden=true;$('modeNote').textContent='Standard mode: the original five-day mission.';reset();}
+  else{hardMode=!hardMode;pickedHard=hardMode;syncDiff();reset();}
+};
+function syncDiff(){
+  document.querySelectorAll('.diff-btn').forEach(x=>x.classList.toggle('active',(x.dataset.diff==='hard')===pickedHard));
+  $('diffNote').textContent=pickedHard?'HARD: vents leak more often, dust breaks in faster and uses up more air, and the vent camera can break. Fix it with the wire-matching game!':'NORMAL: the standard five-day mission.';
+}
+document.querySelectorAll('.diff-btn[data-diff]').forEach(b=>b.addEventListener('click',()=>{playClick('button');pickedHard=b.dataset.diff==='hard';syncDiff();}));
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  playClick('button');pickedLive=b.dataset.mode==='live';
+  document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('active',x===b));
+  $('liveSetup').hidden=!pickedLive;
+  $('modeNote').textContent=pickedLive?'NASA LIVE MISSION: current NASA space-weather and latest accessible Mars weather observations can trigger additional events.':'Standard mode: the original five-day mission.';
+}));
+syncDiff();$('startBtn')?.addEventListener('click',startMission);
+$('commanderNameInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')startMission();});
+document.querySelectorAll('.collapse-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  playClick('button');const d=$(btn.dataset.toggle);d.classList.toggle('collapsed');btn.textContent=d.classList.contains('collapsed')?'+':'−';
+}));
+renderMonitorContent('overview');
+})();
+</script>
+</body>
+</html>
